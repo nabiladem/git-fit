@@ -13,13 +13,16 @@ func CompressImage(inputPath string, outputPath string, maxSize int) error {
 
     // open the input image file
     file, err := os.Open(inputPath)
+
     if err != nil {
         return fmt.Errorf("failed to open input file: %v", err)
     }
+
     defer file.Close()
 
     // decode the image
     img, _, err := image.Decode(file)
+
     if err != nil {
         return fmt.Errorf("failed to decode image: %v", err)
     }
@@ -29,13 +32,16 @@ func CompressImage(inputPath string, outputPath string, maxSize int) error {
 
     // create the output file
     outFile, err := os.Create(outputPath)
+
     if err != nil {
         return fmt.Errorf("failed to create output file: %v", err)
     }
+
     defer outFile.Close()
 
     // compress the resized image as JPEG
     err = jpeg.Encode(outFile, resizedImg, nil)
+	
     if err != nil {
         return fmt.Errorf("failed to compress image: %v", err)
     }
