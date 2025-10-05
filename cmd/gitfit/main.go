@@ -1,20 +1,35 @@
 package main
 
 import (
+	"flag"
 	"fmt"
+	"os"
 	"git-fit/internal/compressor"
 )
 
 func main() {
 
-    // call the function from the internal package to compress the image
-    err := compressor.CompressImage("input.jpg", "output.jpg", 1*1024*1024) // 1MB
+	// define command-line flags
+	inputPath := flag.String("input", "", "Path to the input image file")
+	outputPath := flag.String("output", "", "Path to save the compressed image")
+	maxSize := flag.Int("maxsize", 1048576, "Maximum file size in bytes (default 1MB)") // 1MB
 
-    if err != nil {
-        fmt.Println("Error compressing image:", err)
+	flag.Parse() // parse the input
 
-        return
-    }
-	
-    fmt.Println("Image compressed successfully!")
+	// validate input
+	if *inputPath == "" || *outputPath == "" {
+		fmt.Println("Error: You must provide both -input and -output file paths.")
+		flag.Usage()
+		os.Exit(1)
+	}
+
+	// call the function from the internal package to compress the image
+	err := compressor.CompressImage(*inputPath, *outputPath, *maxSize)
+
+	if err != nil {
+		fmt.Println("Error compressing image:", err)
+		os.Exit(1)
+	}
+
+	fmt.Println("Image compressed successfully!")
 }
