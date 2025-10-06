@@ -14,6 +14,13 @@ func main() {
 	outputPath := flag.String("output", "", "Path to save the compressed image")
 	maxSize := flag.Int("maxsize", 1048576, "Maximum file size in bytes (default 1MB)") // 1MB
 
+    // usage message to helping user with flags
+    flag.Usage = func() {
+        fmt.Println("Usage: gitfit -input <input-image-file> -output <output-image-file> -maxsize <max size in bytes>")
+        fmt.Println("\nFlags:")
+        flag.PrintDefaults()
+    }
+
 	flag.Parse() // parse the input
 
 	// validate input
