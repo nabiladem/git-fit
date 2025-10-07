@@ -15,7 +15,7 @@ func main() {
 	inputPath := flag.String("input", "", "Path to the input image file")
 	outputPath := flag.String("output", "", "Path to save the compressed image")
 	maxSize := flag.Int("maxsize", 1048576, "Maximum file size in bytes (default 1MB)") // 1MB
-    outputFormat := flag.String("format", "", "Output image format (jpeg, png, or gif)")
+    outputFormat := flag.String("format", "", "Output image format (jpeg, png, or gif)") // given or inferred
 
     // usage message for flags
     flag.Usage = func() {
@@ -33,7 +33,7 @@ func main() {
 		os.Exit(1)
 	}
 
-    // compress corresponding to the input type if not given in -output flag, jpeg by default
+    // compress corresponding to the input format if not given in -output flag, jpeg by default
     if *outputFormat == "" {
         extension := strings.ToLower(filepath.Ext(*inputPath))
 
@@ -47,7 +47,7 @@ func main() {
         }
     }
 
-    // add the extension if not present
+    // add the format extension if not present
     if filepath.Ext(*outputPath) == "" {
         *outputPath = *outputPath + "." + *outputFormat
     }

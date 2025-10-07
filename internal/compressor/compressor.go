@@ -10,9 +10,9 @@ import (
     "github.com/nfnt/resize"
 )
 
-// compress image to the target size
-// inputPath - path of the input image; outputPath - path of the input image
-// maxSize - maximum size of the image in byes; outputFormat - jpeg, png, or gif
+// CompressImage() - compress image to the target size
+/* inputPath (string) - path of the input image; outputPath (string) - path of the input image
+// maxSize (int) - maximum size of the image in byes; outputFormat (string) - jpeg, png, or gif */
 func CompressImage(inputPath string, outputPath string, maxSize int, outputFormat string) error {
 
     // open the input image file
@@ -32,7 +32,7 @@ func CompressImage(inputPath string, outputPath string, maxSize int, outputForma
     }
 
     // resize the image to fit within the maxSize
-    resizedImg := resize.Resize(800, 0, img, resize.Lanczos3) // Resize to fit width 800px, keeping aspect ratio
+    resizedImg := resize.Resize(800, 0, img, resize.Lanczos3) // resize to fit width 800px
 
     // create the output file
     outFile, err := os.Create(outputPath)
@@ -43,7 +43,7 @@ func CompressImage(inputPath string, outputPath string, maxSize int, outputForma
 
     defer outFile.Close()
 
-    // compress the resized image to the output format
+    // compress the resized image to the given or inferred output format
     switch outputFormat {
     case "jpeg":
         err = jpeg.Encode(outFile, resizedImg, nil)
@@ -51,7 +51,7 @@ func CompressImage(inputPath string, outputPath string, maxSize int, outputForma
         err = png.Encode(outFile, resizedImg)
     case "gif":
         err = gif.Encode(outFile, resizedImg, nil)
-    // error if not jpeg, png, or gif
+    // error if not jpeg, png, or gif formats
     default:
         return fmt.Errorf("unsupported file type: %v", outputFormat)
     }
