@@ -13,7 +13,7 @@ import (
 // CompressImage() - compress image to the target size
 /* inputPath (string) - path of the input image; outputPath (string) - path of the input image
 // maxSize (int) - maximum size of the image in byes; outputFormat (string) - jpeg, png, or gif */
-func CompressImage(inputPath string, outputPath string, maxSize int, outputFormat string) error {
+func CompressImage(inputPath string, outputPath string, maxSize int, outputFormat string, quality int) error {
 
     // open the input image file
     file, err := os.Open(inputPath)
@@ -46,7 +46,7 @@ func CompressImage(inputPath string, outputPath string, maxSize int, outputForma
     // compress the resized image to the given or inferred output format
     switch outputFormat {
     case "jpeg":
-        err = jpeg.Encode(outFile, resizedImg, nil)
+        err = jpeg.Encode(outFile, resizedImg, &jpeg.Options{Quality: quality})
     case "png":
         err = png.Encode(outFile, resizedImg)
     case "gif":
