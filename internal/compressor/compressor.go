@@ -15,6 +15,10 @@ import (
 // maxSize (int) - maximum size of the image in byes; outputFormat (string) - jpeg, png, or gif */
 func CompressImage(inputPath string, outputPath string, maxSize int, outputFormat string, quality int, verbose bool) error {
 
+    if verbose {
+        fmt.Println("Starting compression...")
+    }
+
     // open the input image file
     file, err := os.Open(inputPath)
 
@@ -23,6 +27,10 @@ func CompressImage(inputPath string, outputPath string, maxSize int, outputForma
     }
 
     defer file.Close()
+
+    if verbose {
+        fmt.Println("Decoding image...")
+    }
 
     // decode the image
     img, _, err := image.Decode(file)
@@ -43,6 +51,10 @@ func CompressImage(inputPath string, outputPath string, maxSize int, outputForma
 
     defer outFile.Close()
 
+    if verbose {
+        fmt.Println("Compressing and saving image...")
+    }
+    
     // compress the resized image to the given or inferred output format
     switch outputFormat {
     case "jpeg":
@@ -51,7 +63,6 @@ func CompressImage(inputPath string, outputPath string, maxSize int, outputForma
         err = png.Encode(outFile, resizedImg)
     case "gif":
         err = gif.Encode(outFile, resizedImg, nil)
-    // error if not jpeg, png, or gif formats
     default:
         return fmt.Errorf("unsupported file type: %v", outputFormat)
     }

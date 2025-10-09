@@ -21,8 +21,8 @@ func main() {
 
     // usage message for flags
     flag.Usage = func() {
-        fmt.Print("Usage: gitfit -input <input-image-file> -output <output-image-file> -maxsize <max size in bytes>-format <jpeg|png|gif> -quality <0-100> -v [for verbose logging]")
-        fmt.Println("\nFlags:")
+        fmt.Println("Usage: gitfit -input <input-image-file> -output <output-image-file> -maxsize <max size in bytes>-format <jpeg|png|gif> -quality <0-100> -v [for verbose logging]")
+        fmt.Println("Flags:")
         flag.PrintDefaults()
     }
 
