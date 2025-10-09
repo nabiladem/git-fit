@@ -17,10 +17,12 @@ func main() {
 	maxSize := flag.Int("maxsize", 1048576, "Maximum file size in bytes (default 1MB)") // 1MB
     outputFormat := flag.String("format", "", "Output image format (jpeg, png, or gif)") // given or inferred
     quality := flag.Int("quality", 85, "JPEG compression quality (1-100; 85 by default)")
+    verbose := flag.Bool("v", false, "Verbose logging enabled")
 
     // usage message for flags
     flag.Usage = func() {
-        fmt.Print("Usage: gitfit -input <input-image-file> -output <output-image-file> -maxsize <max size in bytes> -format <jpeg|png|gif> -quality <0-100>")
+        fmt.Print("Usage: gitfit -input <input-image-file> -output <output-image-file> -maxsize <max size in bytes>" +
+                    "-format <jpeg|png|gif> -quality <0-100> -v [for verbose logging]")
         fmt.Println("\nFlags:")
         flag.PrintDefaults()
     }
@@ -28,11 +30,6 @@ func main() {
 	flag.Parse() // parse the input
 
     // validate input
-    if *quality <= 0 || *quality > 100 {
-        fmt.Println("Error: Value for -quality must be between 1 and 100 inclusive.")
-        os.Exit(1)
-    }
-
 	if *inputPath == "" || *outputPath == "" {
 		fmt.Println("Error: You must provide both -input and -output file paths.")
 		flag.Usage()
@@ -58,8 +55,26 @@ func main() {
         *outputPath = *outputPath + "." + *outputFormat
     }
 
+    // validate quality input for jpeg
+    if *quality <= 0 || *quality > 100 {
+        fmt.Println("Error: Value for -quality must be between 1 and 100 inclusive.")
+        os.Exit(1)
+    }
+
+    // verbose logging
+    if *verbose {
+		fmt.Println("Input file:", *inputPath)
+		fmt.Println("Output file:", *outputPath)
+        fmt.Println("Maximum size:", *maxSize)
+        fmt.Println("Output format:", *outputFormat)
+        
+        if *outputFormat == "jpeg"{
+            fmt.Println("Quality:", *quality)
+        }
+	}
+
 	// call the function from the internal package to compress the image
-	err := compressor.CompressImage(*inputPath, *outputPath, *maxSize, *outputFormat, *quality)
+	err := compressor.CompressImage(*inputPath, *outputPath, *maxSize, *outputFormat, *quality, *verbose)
 
 	if err != nil {
 		fmt.Println("Error compressing image:", err)
