@@ -64,7 +64,7 @@ func CompressImage(inputPath string, outputPath string, maxSize int, outputForma
     case "gif":
         err = gif.Encode(outFile, resizedImg, nil)
     default:
-        return fmt.Errorf("unsupported file type: %v", outputFormat)
+        return fmt.Errorf("unsupported file format: %v. Supported formats are: jpeg, png, gif", outputFormat)
     }
 	
     if err != nil {
