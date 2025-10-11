@@ -93,7 +93,7 @@ func CompressImage(inputPath string, outputPath string, maxSize int, outputForma
             return nil
         }
 
-        width = width * 90 / 100 // reduce width by 10%
+        width = width * 50 / 100 // reduce width by 50%
     }
 
     return fmt.Errorf("failed to compress image under %d bytes", maxSize)
