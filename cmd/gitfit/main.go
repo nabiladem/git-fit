@@ -31,11 +31,16 @@ func main() {
 
     // validate input
 	if *inputPath == "" || *outputPath == "" {
-		fmt.Println("Error: You must provide both -input and -output file paths.")
+        // assume user knows about both flags if one is given
+        if !(*inputPath == "" && *outputPath == "") {
+		    fmt.Println("Error: You must provide both -input and -output file paths.")
+            os.Exit(1)
+        }
 		flag.Usage()
 		os.Exit(1)
 	}
 
+    // warn if default quality is being used
     if *verbose && *quality == 85 {
         fmt.Println("Using default quality of 85 for JPEG compression.")
     }
