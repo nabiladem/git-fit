@@ -36,6 +36,10 @@ func main() {
 		os.Exit(1)
 	}
 
+    if *verbose && *quality == 85 {
+        fmt.Println("Using default quality of 85 for JPEG compression.")
+    }
+
     // compress corresponding to the input format if not given in -output flag, jpeg by default
     if *outputFormat == "" {
         extension := strings.ToLower(filepath.Ext(*inputPath))
