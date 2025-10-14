@@ -39,7 +39,7 @@ func CompressImage(inputPath string, outputPath string, maxSize int, outputForma
     img, _, err := image.Decode(file)
 
     if err != nil {
-        return fmt.Errorf("failed to decode image: %v", err)
+        return fmt.Errorf("failed to decode image from %s: %v", inputPath, err)
     }
 
     width := img.Bounds().Dx()
