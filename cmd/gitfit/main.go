@@ -42,6 +42,12 @@ func main() {
 		os.Exit(1)
 	}
 
+    // check if input file exists
+    if _, err := os.Stat(*inputPath); os.IsNotExist(err) {
+        fmt.Printf("Error: Input file %s does not exist.\n", *inputPath)
+        os.Exit(1)
+    }
+
     // warn if default quality is being used
     if *verbose && *quality == 85 {
         fmt.Println("Using default quality of 85 for JPEG compression.")
@@ -77,7 +83,6 @@ func main() {
         fmt.Printf("Input file: %s\nOutput file: %s\nMaximum size: %d\nOutput format: %s\n",
          *inputPath, *outputPath, *maxSize, *outputFormat)
         
-         // print quality only for jpeg
         if *outputFormat == "jpeg" {
             fmt.Println("Quality:", *quality)
         }
