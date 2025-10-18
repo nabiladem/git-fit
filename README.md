@@ -6,3 +6,4 @@ As a GitHub user, perhaps you have tried to change your GitHub avatar and realiz
 
 ## useful gravatar links:
 1. https://docs.gravatar.com/rest/getting-started/
+2. https://gravatar.com/developers/console
