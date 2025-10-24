@@ -13,4 +13,4 @@ As a GitHub user, perhaps you have tried to change your GitHub avatar and realiz
 
 ## using the tool in its current state:
 ```bash
-go run ./cmd/gitfit/main.go -input input.jpeg -output output.jpeg quality <1-100 for jpeg> -v [for verbose output]
+go run ./cmd/gitfit/main.go -input input.jpeg -output output.jpeg -quality <1-100 for jpeg> -v [for verbose output]
