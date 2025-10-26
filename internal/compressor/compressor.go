@@ -16,135 +16,165 @@ import (
 /* inputPath (string) - path of the input image; outputPath (string) - path of the input image
 // maxSize (int) - maximum size of the image in byes; outputFormat (string) - jpeg, png, or gif */
 func CompressImage(inputPath string, outputPath string, maxSize int, outputFormat string, quality int, verbose bool) error {
-    const MinWidth = 100;
+	const MinWidth = 100
 
-    if verbose {
-        fmt.Println("Starting compression...")
-    }
+	if verbose {
+		fmt.Println("Starting compression...")
+	}
 
-    // open the input image file
-    file, err := os.Open(inputPath)
+	// load and decode image
+	img, width, err := loadImage(inputPath)
+	if err != nil {
+		return fmt.Errorf("failed to load image: %v", err)
+	}
 
-    if err != nil {
-        return fmt.Errorf("failed to open input file: %v", err)
-    }
+	if verbose {
+		fmt.Println("Searching for best width (binary search)...")
+	}
 
-    defer file.Close()
+	best, buf, err := findBestWidthBinarySearch(img, MinWidth, width, maxSize, outputFormat, quality, verbose)
+	if err != nil {
+		return err
+	}
 
-    if verbose {
-        fmt.Println("Decoding image...")
-    }
+	if best == 0 || buf == nil {
+		return fmt.Errorf("cannot compress image to the desired size of %d bytes", maxSize)
+	}
 
-    // decode the image
-    img, _, err := image.Decode(file)
+	// linear refinement to try slightly smaller widths in steps
+	if verbose {
+		fmt.Println("Refining result (linear search)...")
+	}
 
-    if err != nil {
-        return fmt.Errorf("failed to decode image from %s: %v", inputPath, err)
-    }
+	refinedBuf, err := linearRefine(img, best, MinWidth, maxSize, outputFormat, quality, verbose)
+	if err == nil && refinedBuf != nil {
+		buf = refinedBuf
+	}
 
-    width := img.Bounds().Dx()
-    best := 0
-    var buf *bytes.Buffer
-    
-    low, high := MinWidth, width
-    for low <= high {
-        mid := (low + high) / 2
+	if buf == nil {
+		return fmt.Errorf("cannot compress image to the desired size of %d bytes", maxSize)
+	}
 
-        // resize to fit width while maintaining aspect ratio
-        resizedImg := resize.Resize(uint(mid), 0, img, resize.Lanczos3)
+	if verbose {
+		fmt.Println("Saving compressed image...")
+	}
 
-        // encode the resized image to the desired format
-        var binaryBuf bytes.Buffer
-        switch outputFormat {
-        case "jpeg":
-            err = jpeg.Encode(&binaryBuf, resizedImg, &jpeg.Options{Quality: quality})
-        case "png":
-            err = png.Encode(&binaryBuf, resizedImg)
-        case "gif":
-            err = gif.Encode(&binaryBuf, resizedImg, nil)
-        default:
-            return fmt.Errorf("unsupported file format: %v. Supported formats are: jpeg, png, gif", outputFormat)
-        }
+	if err := saveBufferToFile(outputPath, buf); err != nil {
+		return fmt.Errorf("failed to write compressed image to file: %v", err)
+	}
 
-        if err != nil {
-            return fmt.Errorf("failed to encode image: %v", err)
-        }
+	return nil
+}
 
-        size := binaryBuf.Len()
+// loadImage opens and decodes an image from disk and returns the image and its width
+func loadImage(inputPath string) (image.Image, int, error) {
+	file, err := os.Open(inputPath)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to open input file: %v", err)
+	}
+	defer file.Close()
 
-        if verbose {
-            fmt.Printf("[binary] Trying width: %d -> Compressed size: %.2f KB\n", width, float64(size) / 1024.0)
-        }
-        
-        if size > maxSize {
-            high = mid - 1
-        } else {
-            best = mid
-            buf = &binaryBuf
-            low = mid + 1
-        }
-    }
-    
-    if best == 0 {
-        return fmt.Errorf("cannot compress image to the desired size of %d bytes", maxSize)
-    }
+	img, _, err := image.Decode(file)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to decode image from %s: %v", inputPath, err)
+	}
 
-    step := best / 20
-    for width = best; width >= MinWidth; width -= step {
-        // resize to fit width while maintaining aspect ratio
-        resizedImg := resize.Resize(uint(width), 0, img, resize.Lanczos3)
+	width := img.Bounds().Dx()
+	return img, width, nil
+}
 
-        // encode the resized image to the desired format
-        var binaryBuf bytes.Buffer
-        switch outputFormat {
-        case "jpeg":
-            err = jpeg.Encode(&binaryBuf, resizedImg, &jpeg.Options{Quality: quality})
-        case "png":
-            err = png.Encode(&binaryBuf, resizedImg)
-        case "gif":
-            err = gif.Encode(&binaryBuf, resizedImg, nil)
-        default:
-            return fmt.Errorf("unsupported file format: %v. Supported formats are: jpeg, png, gif", outputFormat)
-        }
+// encodeResizedToBuffer resizes img to target width and encodes it to a bytes.Buffer in the requested format
+func encodeResizedToBuffer(img image.Image, width int, outputFormat string, quality int) (*bytes.Buffer, error) {
+	resizedImg := resize.Resize(uint(width), 0, img, resize.Lanczos3)
 
-        if err != nil {
-            return fmt.Errorf("failed to encode image: %v", err)
-        }
+	var binaryBuf bytes.Buffer
+	var err error
+	switch outputFormat {
+	case "jpeg":
+		err = jpeg.Encode(&binaryBuf, resizedImg, &jpeg.Options{Quality: quality})
+	case "png":
+		err = png.Encode(&binaryBuf, resizedImg)
+	case "gif":
+		err = gif.Encode(&binaryBuf, resizedImg, nil)
+	default:
+		return nil, fmt.Errorf("unsupported file format: %v. Supported formats are: jpeg, png, gif", outputFormat)
+	}
 
-        size := binaryBuf.Len()
+	if err != nil {
+		return nil, fmt.Errorf("failed to encode image: %v", err)
+	}
 
-        if verbose {
-            fmt.Printf("[linear] Trying width: %d -> Compressed size: %.2f KB\n", width, float64(size) / 1024.0)
-        }
-        
-        if size <= maxSize {
-            buf = &binaryBuf
-            break
-        }
-    }
+	return &binaryBuf, nil
+}
 
-    if buf == nil {
-        return fmt.Errorf("cannot compress image to the desired size of %d bytes", maxSize)
-    }
+// findBestWidthBinarySearch performs a binary search on width to find the largest width that yields <= maxSize
+func findBestWidthBinarySearch(img image.Image, minWidth, maxWidth, maxSize int, outputFormat string, quality int, verbose bool) (int, *bytes.Buffer, error) {
+	low, high := minWidth, maxWidth
+	best := 0
+	var bestBuf *bytes.Buffer
 
-    // create the output file
-    outFile, err := os.Create(outputPath)
+	for low <= high {
+		mid := (low + high) / 2
+		buf, err := encodeResizedToBuffer(img, mid, outputFormat, quality)
+		if err != nil {
+			return 0, nil, err
+		}
 
-    if err != nil {
-        return fmt.Errorf("failed to create output file: %v", err)
-    }
+		size := buf.Len()
+		if verbose {
+			fmt.Printf("[binary] Trying width: %d -> Compressed size: %.2f KB\n", mid, float64(size)/1024.0)
+		}
 
-    defer outFile.Close()
+		if size > maxSize {
+			high = mid - 1
+		} else {
+			best = mid
+			bestBuf = buf
+			low = mid + 1
+		}
+	}
 
-    if verbose {
-        fmt.Println("Compressing and saving image...")
-    }
+	return best, bestBuf, nil
+}
 
-    _, err = buf.WriteTo(outFile)
+// linearRefine performs a linear search downward from startWidth to minWidth in small steps to try to meet maxSize
+func linearRefine(img image.Image, startWidth, minWidth, maxSize int, outputFormat string, quality int, verbose bool) (*bytes.Buffer, error) {
+	if startWidth <= 0 {
+		return nil, fmt.Errorf("invalid start width")
+	}
 
-    if err != nil {
-        return fmt.Errorf("failed to write compressed image to file: %v", err)
-    }
+	step := startWidth / 20
+	if step < 1 {
+		step = 1
+	}
 
-    return nil
+	for w := startWidth; w >= minWidth; w -= step {
+		buf, err := encodeResizedToBuffer(img, w, outputFormat, quality)
+		if err != nil {
+			return nil, err
+		}
+
+		size := buf.Len()
+		if verbose {
+			fmt.Printf("[linear] Trying width: %d -> Compressed size: %.2f KB\n", w, float64(size)/1024.0)
+		}
+
+		if size <= maxSize {
+			return buf, nil
+		}
+	}
+
+	return nil, fmt.Errorf("no linear refinement found")
+}
+
+// saveBufferToFile writes the content of buf to a file at outputPath
+func saveBufferToFile(outputPath string, buf *bytes.Buffer) error {
+	outFile, err := os.Create(outputPath)
+	if err != nil {
+		return err
+	}
+	defer outFile.Close()
+
+	_, err = buf.WriteTo(outFile)
+	return err
 }
