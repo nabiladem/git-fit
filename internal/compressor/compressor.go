@@ -66,7 +66,7 @@ func CompressImage(inputPath string, outputPath string, maxSize int, outputForma
 	return nil
 }
 
-// loadImage opens and decodes an image from disk and returns the image and its width
+// loadImage() - open and decode an image from disk and returns the image and its width
 func loadImage(inputPath string) (image.Image, int, error) {
 	file, err := os.Open(inputPath)
 	if err != nil {
@@ -83,7 +83,7 @@ func loadImage(inputPath string) (image.Image, int, error) {
 	return img, width, nil
 }
 
-// encodeResizedToBuffer resizes img to target width and encodes it to a bytes.Buffer in the requested format
+// encodeResizedToBuffer() - resize image to target width and encode it to a bytes.Buffer in the requested format
 func encodeResizedToBuffer(img image.Image, width int, outputFormat string, quality int) (*bytes.Buffer, error) {
 	resizedImg := resize.Resize(uint(width), 0, img, resize.Lanczos3)
 
@@ -107,7 +107,7 @@ func encodeResizedToBuffer(img image.Image, width int, outputFormat string, qual
 	return &binaryBuf, nil
 }
 
-// findBestWidthBinarySearch performs a binary search on width to find the largest width that yields <= maxSize
+// findBestWidthBinarySearch() - perform a binary search on width to find the largest width that yields <= maxSize
 func findBestWidthBinarySearch(img image.Image, minWidth, maxWidth, maxSize int, outputFormat string, quality int, verbose bool) (int, *bytes.Buffer, error) {
 	low, high := minWidth, maxWidth
 	best := 0
@@ -137,7 +137,7 @@ func findBestWidthBinarySearch(img image.Image, minWidth, maxWidth, maxSize int,
 	return best, bestBuf, nil
 }
 
-// linearRefine performs a linear search downward from startWidth to minWidth in small steps to try to meet maxSize
+// linearRefine() - perform a linear search downward from startWidth to minWidth in small steps to try to meet maxSize
 func linearRefine(img image.Image, startWidth, minWidth, maxSize int, outputFormat string, quality int, verbose bool) (*bytes.Buffer, error) {
 	if startWidth <= 0 {
 		return nil, fmt.Errorf("invalid start width")
@@ -167,7 +167,7 @@ func linearRefine(img image.Image, startWidth, minWidth, maxSize int, outputForm
 	return nil, fmt.Errorf("no linear refinement found")
 }
 
-// saveBufferToFile writes the content of buf to a file at outputPath
+// saveBufferToFile() - write the content of buf to a file at outputPath
 func saveBufferToFile(outputPath string, buf *bytes.Buffer) error {
 	outFile, err := os.Create(outputPath)
 	if err != nil {
