@@ -13,8 +13,9 @@ import (
 )
 
 // CompressImage() - compress image to the target size
-/* outputPath (string) - path of the output image
-   maxSize (int) - maximum size of the image in bytes; outputFormat (string) - jpeg, png, or gif */
+/* inputPath (string) - path of the input image; outputPath (string) - path of the output image
+   maxSize (int) - maximum size of the image in bytes; outputFormat (string) - jpeg, png, or gif
+   quality (int) - quality for JPEG compression; verbose (bool) - enable verbose logging */
 func CompressImage(inputPath string, outputPath string, maxSize int, outputFormat string, quality int, verbose bool) error {
 	const MinWidth = 100
 
@@ -28,6 +29,7 @@ func CompressImage(inputPath string, outputPath string, maxSize int, outputForma
 		return fmt.Errorf("failed to load image: %v", err)
 	}
 
+	// binary search to find the best width that meets maxSize
 	if verbose {
 		fmt.Println("Searching for best width (binary search)...")
 	}
