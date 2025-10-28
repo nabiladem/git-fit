@@ -13,8 +13,8 @@ import (
 )
 
 // CompressImage() - compress image to the target size
-/* inputPath (string) - path of the input image; outputPath (string) - path of the input image
-// maxSize (int) - maximum size of the image in byes; outputFormat (string) - jpeg, png, or gif */
+/* outputPath (string) - path of the output image
+   maxSize (int) - maximum size of the image in bytes; outputFormat (string) - jpeg, png, or gif */
 func CompressImage(inputPath string, outputPath string, maxSize int, outputFormat string, quality int, verbose bool) error {
 	const MinWidth = 100
 
@@ -67,6 +67,7 @@ func CompressImage(inputPath string, outputPath string, maxSize int, outputForma
 }
 
 // loadImage() - open and decode an image from disk and returns the image and its width
+/* inputPath (string) - path of the input image */
 func loadImage(inputPath string) (image.Image, int, error) {
 	file, err := os.Open(inputPath)
 	if err != nil {
@@ -84,6 +85,8 @@ func loadImage(inputPath string) (image.Image, int, error) {
 }
 
 // encodeResizedToBuffer() - resize image to target width and encode it to a bytes.Buffer in the requested format
+/* img (image.Image) - input image; width (int) - target width
+   outputFormat (string) - jpeg, png, or gif; quality (int) - JPEG quality */
 func encodeResizedToBuffer(img image.Image, width int, outputFormat string, quality int) (*bytes.Buffer, error) {
 	resizedImg := resize.Resize(uint(width), 0, img, resize.Lanczos3)
 
@@ -108,6 +111,8 @@ func encodeResizedToBuffer(img image.Image, width int, outputFormat string, qual
 }
 
 // findBestWidthBinarySearch() - perform a binary search on width to find the largest width that yields <= maxSize
+/* img (image.Image) - input image; minWidth (int) - minimum width; maxWidth (int) - maximum width
+   maxSize (int) - maximum size in bytes; outputFormat (string) - jpeg, png, or gif; quality (int) - JPEG quality */
 func findBestWidthBinarySearch(img image.Image, minWidth, maxWidth, maxSize int, outputFormat string, quality int, verbose bool) (int, *bytes.Buffer, error) {
 	low, high := minWidth, maxWidth
 	best := 0
@@ -138,6 +143,8 @@ func findBestWidthBinarySearch(img image.Image, minWidth, maxWidth, maxSize int,
 }
 
 // linearRefine() - perform a linear search downward from startWidth to minWidth in small steps to try to meet maxSize
+/* img (image.Image) - input image; startWidth (int) - starting width; minWidth (int) - minimum width
+   maxSize (int) - maximum size in bytes; outputFormat (string) - jpeg, png, or gif; quality (int) - JPEG quality */
 func linearRefine(img image.Image, startWidth, minWidth, maxSize int, outputFormat string, quality int, verbose bool) (*bytes.Buffer, error) {
 	if startWidth <= 0 {
 		return nil, fmt.Errorf("invalid start width")
@@ -168,6 +175,7 @@ func linearRefine(img image.Image, startWidth, minWidth, maxSize int, outputForm
 }
 
 // saveBufferToFile() - write the content of buf to a file at outputPath
+/* outputPath (string) - path of the output image; buf (*bytes.Buffer) - buffer containing image data */
 func saveBufferToFile(outputPath string, buf *bytes.Buffer) error {
 	outFile, err := os.Create(outputPath)
 	if err != nil {
