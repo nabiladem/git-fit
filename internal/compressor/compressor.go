@@ -145,8 +145,8 @@ func findBestWidthBinarySearch(img image.Image, minWidth, maxWidth, maxSize int,
 }
 
 // linearRefine() - perform a linear search downward from startWidth to minWidth in small steps to try to meet maxSize
-/* img (image.Image) - input image; startWidth (int) - starting width; minWidth (int) - minimum width
-   maxSize (int) - maximum size in bytes; outputFormat (string) - jpeg, png, or gif; quality (int) - JPEG quality */
+/* img (image.Image) - input image; startWidth (int) - starting width; minWidth (int) - minimum width; maxSize (int) - maximum size in bytes;
+   outputFormat (string) - jpeg, png, or gif; quality (int) - JPEG quality; verbose (bool) - enable verbose logging */
 func linearRefine(img image.Image, startWidth, minWidth, maxSize int, outputFormat string, quality int, verbose bool) (*bytes.Buffer, error) {
 	if startWidth <= 0 {
 		return nil, fmt.Errorf("invalid start width")

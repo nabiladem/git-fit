@@ -22,6 +22,7 @@ type Config struct {
 	Verbose      bool
 }
 
+// main() - entry point
 func main() {
 	cfg := parseFlags()
 	showUsage, err := validateConfig(cfg)
@@ -59,6 +60,7 @@ func parseFlags() *Config {
 
 	flag.Parse()
 
+    // Config struct populated with flag values
 	return &Config{
 		InputPath:    *inputPath,
 		OutputPath:   *outputPath,
@@ -69,10 +71,11 @@ func parseFlags() *Config {
 	}
 }
 
-// validateConfig() - perform validations and sets defaults and returns if usage should be shown and error
+// validateConfig() - perform validations and sets defaults and returns if usage should be shown
 /* cfg (*Config) - configuration to validate */
 func validateConfig(cfg *Config) (bool, error) {
-	if cfg.InputPath == "" || cfg.OutputPath == "" {
+    // check if input and/or output path is missing
+    if cfg.InputPath == "" || cfg.OutputPath == "" {
 		if cfg.InputPath == "" && cfg.OutputPath == "" {
 			return true, nil
 		}
@@ -83,6 +86,7 @@ func validateConfig(cfg *Config) (bool, error) {
 		return false, fmt.Errorf("input file %s does not exist", cfg.InputPath)
 	}
 
+    // set default output format based on input file extension if not provided
 	if cfg.OutputFormat == "" {
 		extension := strings.ToLower(filepath.Ext(cfg.InputPath))
 		switch extension {
@@ -95,6 +99,7 @@ func validateConfig(cfg *Config) (bool, error) {
 		}
 	}
 
+    // append appropriate file extension to output path if missing
 	if filepath.Ext(cfg.OutputPath) == "" {
 		cfg.OutputPath = cfg.OutputPath + "." + cfg.OutputFormat
 	}
