@@ -38,7 +38,7 @@ func main() {
 	fmt.Println("Image compressed successfully!")
 }
 
-// parseFlags extracts flags into a Config struct.
+// parseFlags() - extract flags into a Config struct
 func parseFlags() *Config {
 	inputPath := flag.String("input", "", "Path to the input image file")
 	outputPath := flag.String("output", "", "Path to save the compressed image")
@@ -66,7 +66,7 @@ func parseFlags() *Config {
 	}
 }
 
-// validateConfig performs validations and sets defaults. It returns (showUsage, error).
+// validateConfig() - perform validations and sets defaults and returns if usage should be shown and error
 func validateConfig(cfg *Config) (bool, error) {
 	if cfg.InputPath == "" || cfg.OutputPath == "" {
 		if cfg.InputPath == "" && cfg.OutputPath == "" {
@@ -114,7 +114,7 @@ func validateConfig(cfg *Config) (bool, error) {
 	return false, nil
 }
 
-// runCompress calls the compressor with the provided config.
+// runCompress() - call the compressor with the provided Config
 func runCompress(cfg *Config) error {
 	return compressor.CompressImage(cfg.InputPath, cfg.OutputPath, cfg.MaxSize, cfg.OutputFormat, cfg.Quality, cfg.Verbose)
 }
