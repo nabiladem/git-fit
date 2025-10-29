@@ -10,6 +10,9 @@ import (
 )
 
 // Config holds parsed command-line options
+/* InputPath (string) - path of the input image file; OutputPath (string) - path to save the compressed image
+   MaxSize (int) - maximum size of the image in bytes; OutputFormat (string) - jpeg, png, or gif
+   Quality (int) - quality for JPEG compression; Verbose (bool) - enable verbose logging */
 type Config struct {
 	InputPath    string
 	OutputPath   string
@@ -67,6 +70,7 @@ func parseFlags() *Config {
 }
 
 // validateConfig() - perform validations and sets defaults and returns if usage should be shown and error
+/* cfg (*Config) - configuration to validate */
 func validateConfig(cfg *Config) (bool, error) {
 	if cfg.InputPath == "" || cfg.OutputPath == "" {
 		if cfg.InputPath == "" && cfg.OutputPath == "" {
@@ -115,6 +119,7 @@ func validateConfig(cfg *Config) (bool, error) {
 }
 
 // runCompress() - call the compressor with the provided Config
+/* cfg (*Config) - configuration for compression */
 func runCompress(cfg *Config) error {
 	return compressor.CompressImage(cfg.InputPath, cfg.OutputPath, cfg.MaxSize, cfg.OutputFormat, cfg.Quality, cfg.Verbose)
 }
