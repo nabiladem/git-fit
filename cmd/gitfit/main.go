@@ -47,6 +47,7 @@ func main() {
 
 // parseFlags() - extract flags into a Config struct
 func parseFlags() *Config {
+    // define command-line flags
 	inputPath := flag.String("input", "", "Path to the input image file")
 	outputPath := flag.String("output", "", "Path to save the compressed image")
 	maxSize := flag.Int("maxsize", 1048576, "Maximum file size in bytes (default 1MB)")
@@ -54,8 +55,10 @@ func parseFlags() *Config {
 	quality := flag.Int("quality", 85, "JPEG compression quality (1-100; 85 by default)")
 	verbose := flag.Bool("v", false, "Verbose logging enabled")
 
+    // custom usage message for flags
 	flag.Usage = func() {
-		fmt.Println("Usage: gitfit -input <input-image-file> -output <output-image-file> -maxsize <max size in bytes> -format <jpeg|png|gif> -quality <0-100> -v [for verbose logging]")
+		fmt.Println("Usage: gitfit -input <input-image-file> -output <output-image-file> -maxsize <max size in bytes> " +
+                    "-format <jpeg|png|gif> -quality <0-100> -v [for verbose logging]")
 		fmt.Println("Example: gitfit -input input.jpeg -output output.jpeg -maxsize 1000000 -format jpeg -quality 85 -v")
 		fmt.Println("Flags:")
 		flag.PrintDefaults()
@@ -64,7 +67,7 @@ func parseFlags() *Config {
 	flag.Parse()
 
     // Config struct populated with flag values
-	return &Config{
+	return &Config {
 		InputPath:    *inputPath,
 		OutputPath:   *outputPath,
 		MaxSize:      *maxSize,
@@ -79,7 +82,7 @@ func parseFlags() *Config {
 func validateConfig(cfg *Config) (bool, error) {
     // check if input and/or output path is missing
     if cfg.InputPath == "" || cfg.OutputPath == "" {
-        
+        // assume user knows about both flags if one is given
 		if cfg.InputPath == "" && cfg.OutputPath == "" {
 			return true, nil
 		}
@@ -120,6 +123,7 @@ func validateConfig(cfg *Config) (bool, error) {
 	if cfg.Verbose {
 		fmt.Printf("Input file: %s\nOutput file: %s\nMaximum size: %d\nOutput format: %s\n",
 			cfg.InputPath, cfg.OutputPath, cfg.MaxSize, cfg.OutputFormat)
+
 		if cfg.OutputFormat == "jpeg" {
 			fmt.Println("Quality:", cfg.Quality)
 		}
@@ -131,5 +135,6 @@ func validateConfig(cfg *Config) (bool, error) {
 // runCompress() - call the compressor with the provided Config
 /* cfg (*Config) - configuration for compression */
 func runCompress(cfg *Config) error {
-	return compressor.CompressImage(cfg.InputPath, cfg.OutputPath, cfg.MaxSize, cfg.OutputFormat, cfg.Quality, cfg.Verbose)
+	return compressor.CompressImage(cfg.InputPath, cfg.OutputPath, cfg.MaxSize,
+                                     cfg.OutputFormat, cfg.Quality, cfg.Verbose)
 }
