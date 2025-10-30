@@ -26,14 +26,17 @@ type Config struct {
 func main() {
 	cfg := parseFlags()
 	showUsage, err := validateConfig(cfg)
+
 	if showUsage {
 		flag.Usage()
 		os.Exit(1)
 	}
+
 	if err != nil {
 		fmt.Println("Error:", err)
 		os.Exit(1)
 	}
+
 	if err := runCompress(cfg); err != nil {
 		fmt.Println("Error compressing image:", err)
 		os.Exit(1)
@@ -76,9 +79,11 @@ func parseFlags() *Config {
 func validateConfig(cfg *Config) (bool, error) {
     // check if input and/or output path is missing
     if cfg.InputPath == "" || cfg.OutputPath == "" {
+        
 		if cfg.InputPath == "" && cfg.OutputPath == "" {
 			return true, nil
 		}
+
 		return false, fmt.Errorf("you must provide both -input and -output file paths")
 	}
 
