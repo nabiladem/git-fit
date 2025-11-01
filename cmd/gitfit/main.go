@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"git-fit/internal/compressor"
+	"github.com/nabiladem/git-fit/internal/compressor"
 	"os"
 	"path/filepath"
 	"strings"

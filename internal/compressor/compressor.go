@@ -9,7 +9,7 @@ import (
 	"image/png"
 	"os"
 
-	"github.com/nfnt/resize"
+	"github.com/disintegration/imaging"
 )
 
 // CompressImage() - compress image to the target size
@@ -86,30 +86,40 @@ func loadImage(inputPath string) (image.Image, int, error) {
 	return img, width, nil
 }
 
-// encodeResizedToBuffer() - resize image to target width and encode it to a bytes.Buffer in the requested format
+// encodeResizedToBuffer - resize an image to the target width and encodes it into a bytes.Buffer
 /* img (image.Image) - input image; width (int) - target width
    outputFormat (string) - jpeg, png, or gif; quality (int) - JPEG quality */
 func encodeResizedToBuffer(img image.Image, width int, outputFormat string, quality int) (*bytes.Buffer, error) {
-	resizedImg := resize.Resize(uint(width), 0, img, resize.Lanczos3)
-
-	var binaryBuf bytes.Buffer
+	resizedImg := imaging.Resize(img, width, 0, imaging.Lanczos)
+	var buf bytes.Buffer
 	var err error
+
 	switch outputFormat {
 	case "jpeg":
-		err = jpeg.Encode(&binaryBuf, resizedImg, &jpeg.Options{Quality: quality})
+		if quality < 1 || quality > 100 {
+			quality = 85 // default
+		}
+		err = jpeg.Encode(&buf, resizedImg, &jpeg.Options{Quality: quality})
 	case "png":
-		err = png.Encode(&binaryBuf, resizedImg)
+		err = png.Encode(&buf, resizedImg)
 	case "gif":
-		err = gif.Encode(&binaryBuf, resizedImg, nil)
+		err = gif.Encode(&buf, resizedImg, &gif.Options{NumColors: 256}) // fidelity
 	default:
-		return nil, fmt.Errorf("unsupported file format: %v. Supported formats are: jpeg, png, gif", outputFormat)
+		return nil, fmt.Errorf(
+			"unsupported file format: %v. Supported formats are: jpeg, png, gif",
+			outputFormat,
+		)
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to encode image: %v", err)
+		return nil, fmt.Errorf("failed to encode image as %s: %v", outputFormat, err)
 	}
 
-	return &binaryBuf, nil
+	if buf.Len() == 0 {
+		return nil, fmt.Errorf("encoding produced empty buffer")
+	}
+
+	return &buf, nil
 }
 
 // findBestWidthBinarySearch() - perform a binary search on width to find the largest width that yields <= maxSize

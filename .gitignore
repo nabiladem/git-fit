@@ -1,0 +1,15 @@
+.DS_Store
+
+# Binaries for programs and plugins
+gitfit
+*.exe
+*.out
+*.test
+*.dll
+*.so
+
+# Image files
+*.png
+*.jpg
+*.jpeg
+*.gif
