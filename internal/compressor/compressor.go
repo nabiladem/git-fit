@@ -86,7 +86,7 @@ func loadImage(inputPath string) (image.Image, int, error) {
 	return img, width, nil
 }
 
-// encodeResizedToBuffer - resize an image to the target width and encodes it into a bytes.Buffer
+// encodeResizedToBuffer() - resize an image to the target width and encodes it into a bytes.Buffer
 /* img (image.Image) - input image; width (int) - target width
    outputFormat (string) - jpeg, png, or gif; quality (int) - JPEG quality */
 func encodeResizedToBuffer(img image.Image, width int, outputFormat string, quality int) (*bytes.Buffer, error) {
