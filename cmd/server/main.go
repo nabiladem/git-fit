@@ -3,10 +3,12 @@ package main
 import (
 	"fmt"
 	"io"
+	"mime"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/nabiladem/git-fit/internal/compressor"
@@ -85,7 +87,7 @@ func main() {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create output temp file"})
 			return
 		}
-		
+
 		outPath := outTmp.Name()
 		outTmp.Close()
 
@@ -97,15 +99,36 @@ func main() {
 			return
 		}
 
-		// serve compressed file as attachment
-		c.Header("Content-Description", "File Transfer")
-		c.Header("Content-Transfer-Encoding", "binary")
-		c.Header("Content-Disposition", "attachment; filename="+strconv.Quote(filepath.Base(outPath)))
-		c.File(outPath)
+		// stat compressed file to get size and mime type
+		info, err := os.Stat(outPath)
+		if err != nil {
+			_ = os.Remove(outPath)
+			_ = os.Remove(tmpPath)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to stat compressed file"})
+			return
+		}
 
-		// cleanup temp files
-		_ = os.Remove(outPath)
-		_ = os.Remove(tmpPath)
+		mimeType := mime.TypeByExtension(filepath.Ext(outPath))
+		if mimeType == "" {
+			mimeType = "application/octet-stream"
+		}
+
+		// respond with JSON metadata about the compressed file
+		resp := gin.H{
+			"filename": filepath.Base(outPath),
+			"size":     info.Size(),
+			"mime":     mimeType,
+			"message":  "compression successful",
+		}
+
+		// schedule background cleanup of the temp files after 60s
+		go func(p1, p2 string) {
+			time.Sleep(60 * time.Second)
+			_ = os.Remove(p1)
+			_ = os.Remove(p2)
+		}(outPath, tmpPath)
+
+		c.JSON(http.StatusOK, resp)
 	})
 
 	// optionally serve your built React frontend
