@@ -46,6 +46,7 @@ func main() {
 			os.Remove(tmpPath) // cleanup
 		}()
 
+		// copy uploaded content to temp file
 		if _, err := io.Copy(tmp, src); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save uploaded file"})
 			return
@@ -128,6 +129,7 @@ func main() {
 			_ = os.Remove(p2)
 		}(outPath, tmpPath)
 
+		// send JSON response
 		c.JSON(http.StatusOK, resp)
 	})
 

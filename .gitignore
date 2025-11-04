@@ -14,3 +14,5 @@ gitfit
 *.jpg
 *.jpeg
 *.gif
+compress
+gitfit-compressed-*.jpg
