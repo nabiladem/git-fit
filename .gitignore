@@ -1,4 +1,5 @@
 .DS_Store
+.vscode/
 
 # Binaries for programs and plugins
 gitfit
@@ -13,3 +14,5 @@ gitfit
 *.jpg
 *.jpeg
 *.gif
+compress
+gitfit-compressed-*.jpg
