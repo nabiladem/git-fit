@@ -1,6 +1,9 @@
 package main
 
 import (
+	"crypto/rand"
+	"crypto/subtle"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"mime"
@@ -8,11 +11,48 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/nabiladem/git-fit/internal/compressor"
 )
+
+// in-memory store for short-lived compressed files
+type storedFile struct {
+	Data     []byte
+	Mime     string
+	Filename string
+	Expires  time.Time
+	Token    string
+}
+
+// global file store
+var (
+	fileStore = struct {
+		sync.Mutex
+		m map[string]storedFile
+	}{m: make(map[string]storedFile)}
+)
+
+// init() - initialize the janitor goroutine to clean up expired files
+func init() {
+	// janitor goroutine to remove expired items every minute
+	go func() {
+		ticker := time.NewTicker(time.Minute)
+		defer ticker.Stop()
+		for range ticker.C {
+			now := time.Now()
+			fileStore.Lock()
+			for k, v := range fileStore.m {
+				if v.Expires.Before(now) {
+					delete(fileStore.m, k)
+				}
+			}
+			fileStore.Unlock()
+		}
+	}()
+}
 
 // main() - entry point
 func main() {
@@ -114,27 +154,91 @@ func main() {
 			mimeType = "application/octet-stream"
 		}
 
-		// respond with JSON metadata about the compressed file
-		resp := gin.H{
-			"filename": filepath.Base(outPath),
-			"size":     info.Size(),
-			"mime":     mimeType,
-			"message":  "compression successful",
+		// read compressed file into memory
+		data, err := os.ReadFile(outPath)
+		if err != nil {
+			_ = os.Remove(outPath)
+			_ = os.Remove(tmpPath)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to read compressed file"})
+			return
 		}
 
-		// schedule background cleanup of the temp files after 60s
-		go func(p1, p2 string) {
-			time.Sleep(60 * time.Second)
-			_ = os.Remove(p1)
-			_ = os.Remove(p2)
-		}(outPath, tmpPath)
+		// generate short-lived id and token
+		idb := make([]byte, 16)
+		_, _ = rand.Read(idb)
+		id := hex.EncodeToString(idb)
+		tokn := make([]byte, 16)
+		_, _ = rand.Read(tokn)
+		token := hex.EncodeToString(tokn)
 
-		// send JSON response
+		// store in memory for short period (5 minutes)
+		fileStore.Lock()
+		fileStore.m[id] = storedFile{
+			Data:     data,
+			Mime:     mimeType,
+			Filename: filepath.Base(outPath),
+			Expires:  time.Now().Add(5 * time.Minute),
+			Token:    token,
+		}
+		fileStore.Unlock()
+
+		// remove temp files immediately
+		_ = os.Remove(outPath)
+		_ = os.Remove(tmpPath)
+
+		// build a download URL (preserve scheme and host from request)
+		scheme := "http"
+		if c.Request.TLS != nil || c.GetHeader("X-Forwarded-Proto") == "https" {
+			scheme = "https"
+		}
+		host := c.Request.Host
+		downloadURL := fmt.Sprintf("%s://%s/api/download/%s?token=%s", scheme, host, id, token)
+
+		// respond with JSON metadata including a signed download URL
+		resp := gin.H{
+			"filename":     filepath.Base(outPath),
+			"size":         info.Size(),
+			"mime":         mimeType,
+			"message":      "compression successful",
+			"download_url": downloadURL,
+			"expires_in":   300, // seconds
+		}
+
 		c.JSON(http.StatusOK, resp)
 	})
 
+	// GET /api/download/:id?token=<token>
+	r.GET("/api/download/:id", func(c *gin.Context) {
+		id := c.Param("id")
+		token := c.Query("token")
+
+		fileStore.Lock()
+		f, ok := fileStore.m[id]
+		fileStore.Unlock()
+
+		if !ok || time.Now().After(f.Expires) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "file not found or expired"})
+			return
+		}
+
+		// constant-time token compare
+		if subtle.ConstantTimeCompare([]byte(token), []byte(f.Token)) != 1 {
+			c.JSON(http.StatusForbidden, gin.H{"error": "invalid token"})
+			return
+		}
+
+		// serve bytes
+		c.Header("Content-Type", f.Mime)
+		c.Header("Content-Disposition", "attachment; filename="+strconv.Quote(f.Filename))
+		c.Data(http.StatusOK, f.Mime, f.Data)
+	})
+
 	// optionally serve your built React frontend
-	r.Static("/", "./web/dist")
+	r.Static("/assets", "./web/dist/assets")
+	r.NoRoute(func(c *gin.Context) {
+    c.File("./web/dist/index.html")
+})
+
 
 	addr := ":8080"
 	fmt.Println("Starting server on", addr)
