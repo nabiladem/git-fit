@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react'
 
-/* UploadForm() - form to upload and compress avatar images */
 export default function UploadForm() {
   const [file, setFile] = useState(null)
   const [preview, setPreview] = useState(null)
@@ -22,7 +21,7 @@ export default function UploadForm() {
     return () => URL.revokeObjectURL(url)
   }, [file])
 
-  /* onSubmit() - handle form submission */
+  /* onSubmit() - handles form submission */
   async function onSubmit(e) {
     e.preventDefault()
     setError(null)
@@ -55,12 +54,13 @@ export default function UploadForm() {
     }
   }
 
+  /* onFileChange() - handles file input change */
   function onFileChange(e) {
     const f = e.target.files && e.target.files[0]
     setFile(f || null)
   }
 
-  /* onDownload() - download the compressed image */
+  /* onDownload() - downloads the compressed image */
   function onDownload() {
     if (!result || !result.download_url) return
     // navigate to the signed download URL
