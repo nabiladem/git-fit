@@ -1,6 +1,7 @@
 import React from 'react'
 import UploadForm from './components/UploadForm'
 
+// main application component
 export default function App() {
   return (
     <div style={{minHeight:'100vh', padding:20, fontFamily:'sans-serif', display:'flex', alignItems:'center', justifyContent:'center', background:'#f3f4f6'}}>
