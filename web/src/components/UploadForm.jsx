@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react'
 export default function UploadForm() {
   const [file, setFile] = useState(null)
   const [preview, setPreview] = useState(null)
-  const [maxSize, setMaxSize] = useState(1000000)
+  const [maxSize, setMaxSize] = useState(1048576)
   const [format, setFormat] = useState('jpeg')
   const [quality, setQuality] = useState(85)
   const [loading, setLoading] = useState(false)
@@ -32,15 +32,18 @@ export default function UploadForm() {
       return
     }
 
-    const fd = new FormData()
-    fd.append('avatar', file, file.name)
-    fd.append('maxsize', String(maxSize))
-    fd.append('format', format)
-    fd.append('quality', String(quality))
+  const fd = new FormData()
+  fd.append('avatar', file, file.name)
+  fd.append('maxsize', String(maxSize))
+  fd.append('format', format)
+  fd.append('quality', String(quality))
+
+  // In dev mode Vite runs on a different origin — point requests to the Go backend
+  const apiBase = import.meta.env && import.meta.env.DEV ? 'http://localhost:8080' : ''
 
     setLoading(true)
     try {
-      const res = await fetch('/api/compress', { method: 'POST', body: fd })
+  const res = await fetch(apiBase + '/api/compress', { method: 'POST', body: fd })
       const data = await res.json()
       if (!res.ok) {
         setError(data.error || data.message || 'Compression failed')
@@ -120,6 +123,6 @@ export default function UploadForm() {
           )}
         </div>
       )}
-    </form>
+  </form>
   )
 }
