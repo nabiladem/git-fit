@@ -14,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/nabiladem/git-fit/internal/compressor"
 )
@@ -57,6 +58,14 @@ func init() {
 // main() - entry point
 func main() {
 	r := gin.Default()
+
+	// Enable CORS with specific settings
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:5173"}, // React frontend URL
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}, // Allowed HTTP methods
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"}, // Allowed headers
+		AllowCredentials: true, // Allow credentials like cookies (if needed)
+	}))
 
 	// POST /api/compress
 	r.POST("/api/compress", func(c *gin.Context) {
@@ -236,10 +245,10 @@ func main() {
 	// optionally serve your built React frontend
 	r.Static("/assets", "./web/dist/assets")
 	r.NoRoute(func(c *gin.Context) {
-    c.File("./web/dist/index.html")
-})
+		c.File("./web/dist/index.html")
+	})
 
-
+	// Start the server
 	addr := ":8080"
 	fmt.Println("Starting server on", addr)
 	if err := r.Run(addr); err != nil {
