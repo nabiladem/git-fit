@@ -59,7 +59,7 @@ func init() {
 func main() {
 	r := gin.Default()
 
-	// Enable CORS with specific settings
+	// enable CORS with specific settings
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:5173"}, // React frontend URL
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}, // Allowed HTTP methods
@@ -132,6 +132,7 @@ func main() {
 			outExt = ".jpg"
 		}
 
+		// run compression
 		outTmp, err := os.CreateTemp("", "gitfit-compressed-*"+outExt)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create output temp file"})
@@ -200,6 +201,7 @@ func main() {
 		if c.Request.TLS != nil || c.GetHeader("X-Forwarded-Proto") == "https" {
 			scheme = "https"
 		}
+		
 		host := c.Request.Host
 		downloadURL := fmt.Sprintf("%s://%s/api/download/%s?token=%s", scheme, host, id, token)
 
@@ -248,7 +250,7 @@ func main() {
 		c.File("./web/dist/index.html")
 	})
 
-	// Start the server
+	// start the server
 	addr := ":8080"
 	fmt.Println("Starting server on", addr)
 	if err := r.Run(addr); err != nil {

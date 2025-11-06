@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 
+// UploadForm - image upload and compression form component
 export default function UploadForm() {
   const [file, setFile] = useState(null)
   const [preview, setPreview] = useState(null)
@@ -32,13 +33,14 @@ export default function UploadForm() {
       return
     }
 
+  // prepare form data
   const fd = new FormData()
   fd.append('avatar', file, file.name)
   fd.append('maxsize', String(maxSize))
   fd.append('format', format)
   fd.append('quality', String(quality))
 
-  // In dev mode Vite runs on a different origin — point requests to the Go backend
+  // in dev mode Vite runs on a different origin — point requests to the Go backend
   const apiBase = import.meta.env && import.meta.env.DEV ? 'http://localhost:8080' : ''
 
     setLoading(true)
