@@ -59,7 +59,7 @@ func init() {
 func main() {
 	r := gin.Default()
 
-	// enable CORS with specific settings
+	// enable CORS with specific settings (for local dev with Vite frontend)
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:5173"}, // React frontend URL
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}, // Allowed HTTP methods

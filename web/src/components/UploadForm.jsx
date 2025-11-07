@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react'
 
-// UploadForm - image upload and compression form component
-export default function UploadForm() {
-  const [file, setFile] = useState(null)
+// UploadForm() - image upload and compression form component
+export default function UploadForm({ file, onFileChange }) {
   const [preview, setPreview] = useState(null)
-  const [maxSize, setMaxSize] = useState(1048576)
+  const [maxSize, setMaxSize] = useState(1048576) // Default: 1MB
   const [format, setFormat] = useState('jpeg')
   const [quality, setQuality] = useState(85)
   const [loading, setLoading] = useState(false)
@@ -33,43 +32,65 @@ export default function UploadForm() {
       return
     }
 
-  // prepare form data
-  const fd = new FormData()
-  fd.append('avatar', file, file.name)
-  fd.append('maxsize', String(maxSize))
-  fd.append('format', format)
-  fd.append('quality', String(quality))
+    // prepare form data
+    const fd = new FormData()
+    fd.append('avatar', file, file.name)
+    fd.append('maxsize', String(maxSize))
+    fd.append('format', format)
+    fd.append('quality', String(quality))
 
-  // in dev mode Vite runs on a different origin — point requests to the Go backend
-  const apiBase = import.meta.env && import.meta.env.DEV ? 'http://localhost:8080' : ''
+    // API Base URL (for dev mode)
+    const apiBase = import.meta.env && import.meta.env.DEV ? 'http://localhost:8080' : ''
 
     setLoading(true)
     try {
-  const res = await fetch(apiBase + '/api/compress', { method: 'POST', body: fd })
+      // call backend API to compress the image
+      const res = await fetch(apiBase + '/api/compress', { method: 'POST', body: fd })
       const data = await res.json()
+
       if (!res.ok) {
         setError(data.error || data.message || 'Compression failed')
       } else {
+        // store result on successful compression
         setResult(data)
       }
     } catch (err) {
-      setError(err.message || String(err))
+      setError(err.message || String(err)) // handle any fetch errors
     } finally {
       setLoading(false)
     }
   }
 
-  /* onFileChange() - handles file input change */
-  function onFileChange(e) {
-    const f = e.target.files && e.target.files[0]
-    setFile(f || null)
-  }
-
-  /* onDownload() - downloads the compressed image */
+  /* onDownload() - handle file download */
   function onDownload() {
     if (!result || !result.download_url) return
-    // navigate to the signed download URL
-    window.location.href = result.download_url
+
+    // Use fetch to get the file
+    fetch(result.download_url)
+      .then((response) => {
+        if (!response.ok) throw new Error('Download failed')
+        return response.blob() // Get the file as a blob
+      })
+      .then((blob) => {
+        // create a temporary URL for the blob
+        const url = URL.createObjectURL(blob)
+
+        // create a temporary <a> element for downloading
+        const a = document.createElement('a')
+        a.href = url
+        a.target = '_blank'
+        a.download = result.filename // Use the filename from the result
+        document.body.appendChild(a)
+
+        a.click()
+
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+      })
+      .catch((err) => {
+        setError('Download failed: ' + err.message)
+        console.error('Download error:', err)
+      })
   }
 
   return (
@@ -79,6 +100,7 @@ export default function UploadForm() {
         <input type="file" accept="image/*" onChange={onFileChange} className="mt-1" />
       </div>
 
+      {/* Image Preview */}
       {preview && (
         <div className="flex items-center gap-4">
           <img src={preview} alt="preview" className="w-24 h-24 object-cover rounded" />
@@ -86,12 +108,22 @@ export default function UploadForm() {
         </div>
       )}
 
+      {/* Form Controls */}
       <div className="grid grid-cols-2 gap-4">
         <label className="text-sm">Max size (bytes)
-          <input type="number" value={maxSize} onChange={(e) => setMaxSize(Number(e.target.value))} className="mt-1 block w-full border rounded px-2 py-1" />
+          <input
+            type="number"
+            value={maxSize}
+            onChange={(e) => setMaxSize(Number(e.target.value))}
+            className="mt-1 block w-full border rounded px-2 py-1"
+          />
         </label>
         <label className="text-sm">Format
-          <select value={format} onChange={(e) => setFormat(e.target.value)} className="mt-1 block w-full border rounded px-2 py-1">
+          <select
+            value={format}
+            onChange={(e) => setFormat(e.target.value)}
+            className="mt-1 block w-full border rounded px-2 py-1"
+          >
             <option value="jpeg">jpeg</option>
             <option value="png">png</option>
             <option value="gif">gif</option>
@@ -101,17 +133,33 @@ export default function UploadForm() {
 
       <div className="grid grid-cols-2 gap-4">
         <label className="text-sm">Quality
-          <input type="number" value={quality} onChange={(e) => setQuality(Number(e.target.value))} min={1} max={100} className="mt-1 block w-full border rounded px-2 py-1" />
+          <input
+            type="number"
+            value={quality}
+            onChange={(e) => setQuality(Number(e.target.value))}
+            min={1}
+            max={100}
+            className="mt-1 block w-full border rounded px-2 py-1"
+          />
         </label>
         <div />
       </div>
 
+      {/* Submit Button */}
       <div>
-        <button type="submit" disabled={loading} className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">{loading ? 'Compressing…' : 'Compress'}</button>
+        <button
+          type="submit"
+          disabled={loading}
+          className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+        >
+          {loading ? 'Compressing…' : 'Compress'}
+        </button>
       </div>
 
+      {/* Error Messages */}
       {error && <div className="text-red-600">Error: {error}</div>}
 
+      {/* Display the compression result */}
       {result && (
         <div className="p-3 border rounded bg-green-50">
           <div><strong>Filename:</strong> {result.filename}</div>
@@ -119,12 +167,24 @@ export default function UploadForm() {
           <div><strong>Type:</strong> {result.mime}</div>
           {result.download_url && (
             <div className="mt-2">
-              <button onClick={onDownload} className="px-3 py-1 bg-blue-600 text-white rounded">Download</button>
-              <a href={result.download_url} className="ml-3 text-sm text-blue-700" target="_blank" rel="noreferrer">Open in new tab</a>
+              <button
+                onClick={onDownload}
+                className="px-3 py-1 bg-blue-600 text-white rounded"
+              >
+                Download
+              </button>
+              <a
+                href={result.download_url}
+                className="ml-3 text-sm text-blue-700"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open in new tab
+              </a>
             </div>
           )}
         </div>
       )}
-  </form>
+    </form>
   )
 }
