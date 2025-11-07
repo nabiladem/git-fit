@@ -51,7 +51,7 @@ export default function UploadForm({ file, onFileChange }) {
       if (!res.ok) {
         setError(data.error || data.message || 'Compression failed')
       } else {
-        // // store result on successful compression
+        // store result on successful compression
         setResult(data)
       }
     } catch (err) {
@@ -64,8 +64,35 @@ export default function UploadForm({ file, onFileChange }) {
   /* onDownload() - handle file download */
   function onDownload() {
     if (!result || !result.download_url) return
-    // navigate to the signed download URL
-    window.location.href = result.download_url
+
+    // Use fetch to get the file
+    fetch(result.download_url)
+      .then((response) => {
+        if (!response.ok) throw new Error('Download failed')
+        return response.blob() // Get the file as a blob
+      })
+      .then((blob) => {
+        // Create a temporary URL for the blob
+        const url = URL.createObjectURL(blob)
+
+        // Create a temporary <a> element for downloading
+        const a = document.createElement('a')
+        a.href = url
+        a.target = '_blank'
+        a.download = result.filename // Use the filename from the result
+        document.body.appendChild(a)
+
+        // Trigger a click to download the file
+        a.click()
+
+        // Clean up: remove the temporary <a> element and revoke the object URL
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+      })
+      .catch((err) => {
+        setError('Download failed: ' + err.message)
+        console.error('Download error:', err)
+      })
   }
 
   return (
