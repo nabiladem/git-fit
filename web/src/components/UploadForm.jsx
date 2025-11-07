@@ -72,20 +72,18 @@ export default function UploadForm({ file, onFileChange }) {
         return response.blob() // Get the file as a blob
       })
       .then((blob) => {
-        // Create a temporary URL for the blob
+        // create a temporary URL for the blob
         const url = URL.createObjectURL(blob)
 
-        // Create a temporary <a> element for downloading
+        // create a temporary <a> element for downloading
         const a = document.createElement('a')
         a.href = url
         a.target = '_blank'
         a.download = result.filename // Use the filename from the result
         document.body.appendChild(a)
 
-        // Trigger a click to download the file
         a.click()
 
-        // Clean up: remove the temporary <a> element and revoke the object URL
         document.body.removeChild(a)
         URL.revokeObjectURL(url)
       })

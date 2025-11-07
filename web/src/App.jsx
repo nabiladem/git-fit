@@ -76,8 +76,8 @@ export default function App() {
                 <p>Size: {result.size} bytes</p>
                 <p>MIME Type: {result.mime}</p>
                 <p>
-                  <a href={result.download_url} download={result.filename}>
-                    Download the compressed image
+                  <a href={result.download_url} target="_blank" rel="noopener noreferrer">
+                    Open in new tab
                   </a>
                 </p>
                 <p>Expires in: {result.expires_in} seconds</p>
