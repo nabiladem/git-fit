@@ -12,7 +12,7 @@ export default function App() {
   // handle file selection in UploadForm
   const handleFileChange = (e) => {
     setFile(e.target.files[0])
-    setResult(null)  // Reset previous result
+    setResult(null) // Reset previous result
   }
 
   // handle form submission to call backend API for compression
@@ -35,59 +35,89 @@ export default function App() {
         body: formData,
       })
 
-      // check if the response is okay
       if (!response.ok) {
         throw new Error('Compression failed. Please try again.')
       }
 
+      // parse JSON response
       const data = await response.json()
+      if (data.error) throw new Error(data.error)
 
-      if (data.error) {
-        throw new Error(data.error)
-      }
-
-      setResult(data)  // set the result of the compression
+      setResult(data)
     } catch (err) {
-      setError(err.message)  // handle error
+      setError(err.message)
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div style={{ minHeight: '100vh', padding: 20, fontFamily: 'sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f3f4f6' }}>
-      <div style={{ width: '100%', maxWidth: 720, background: '#fff', borderRadius: 8, boxShadow: '0 6px 18px rgba(0,0,0,0.08)', padding: 24 }}>
-        <header style={{ marginBottom: 16, textAlign: 'left' }}>
-          <h1 style={{ margin: 0, fontSize: 24 }}>git fit</h1>
-          <p style={{ marginTop: 6, color: '#374151' }}>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 font-sans p-6">
+      <div className="w-full max-w-3xl bg-white rounded-lg shadow-lg p-6">
+        <header className="mb-6 text-left">
+          <h1 className="text-2xl font-semibold text-gray-900">git fit</h1>
+          <p className="mt-2 text-gray-600">
             Compress images to GitHub avatar limits (1MB). Upload an image and download the compressed avatar.
           </p>
         </header>
 
         <main>
           <UploadForm file={file} onFileChange={handleFileChange} />
-          <div style={{ marginTop: 20 }}>
-            {loading && <p>Compressing image...</p>}
-            {error && <p style={{ color: 'red' }}>{error}</p>}
+
+          {/* Status + Result */}
+          <div className="mt-6 space-y-4">
+            {loading && (
+              <p className="text-indigo-600 font-medium">Compressing image...</p>
+            )}
+            {error && (
+              <p className="text-red-600 font-medium">Error: {error}</p>
+            )}
+
             {result && (
-              <div>
-                <h2>Compression Successful!</h2>
-                <p>Filename: {result.filename}</p>
-                <p>Size: {result.size} bytes</p>
-                <p>MIME Type: {result.mime}</p>
-                <p>
-                  <a href={result.download_url} target="_blank" rel="noopener noreferrer">
+              <div className="p-4 border rounded bg-green-50">
+                <h2 className="text-lg font-semibold text-green-800">
+                  Compression Successful!
+                </h2>
+                <p className="text-sm text-gray-700 mt-1">
+                  <strong>Filename:</strong> {result.filename}
+                </p>
+                <p className="text-sm text-gray-700">
+                  <strong>Size:</strong> {result.size} bytes
+                </p>
+                <p className="text-sm text-gray-700">
+                  <strong>MIME Type:</strong> {result.mime}
+                </p>
+                <p className="text-sm text-gray-700 mt-1">
+                  <a
+                    href={result.download_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-800 underline"
+                  >
                     Open in new tab
                   </a>
                 </p>
-                <p>Expires in: {result.expires_in} seconds</p>
+                <p className="text-sm text-gray-500 mt-1">
+                  Expires in: {result.expires_in} seconds
+                </p>
               </div>
             )}
           </div>
 
-          <button onClick={handleCompress} style={{ padding: '10px 20px', fontSize: 16, background: '#4CAF50', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}>
-            Compress Image
-          </button>
+          {/* Compress Button */}
+          <div className="mt-6">
+            <button
+              onClick={handleCompress}
+              disabled={loading}
+              className={`px-5 py-2.5 text-white font-medium rounded transition-colors
+                ${loading
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-green-600 hover:bg-green-700 focus:ring-2 focus:ring-green-400 focus:outline-none'
+                }`}
+            >
+              {loading ? 'Compressing…' : 'Compress Image'}
+            </button>
+          </div>
         </main>
       </div>
     </div>

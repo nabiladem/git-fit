@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react'
 // UploadForm() - image upload and compression form component
 export default function UploadForm({ file, onFileChange }) {
   const [preview, setPreview] = useState(null)
-  const [maxSize, setMaxSize] = useState(1048576) // Default: 1MB
+  const [maxSize, setMaxSize] = useState(1048576) // 1MB
   const [format, setFormat] = useState('jpeg')
   const [quality, setQuality] = useState(85)
   const [loading, setLoading] = useState(false)
@@ -65,11 +65,11 @@ export default function UploadForm({ file, onFileChange }) {
   function onDownload() {
     if (!result || !result.download_url) return
 
-    // Use fetch to get the file
+    // use fetch to get the file
     fetch(result.download_url)
       .then((response) => {
         if (!response.ok) throw new Error('Download failed')
-        return response.blob() // Get the file as a blob
+        return response.blob() // get the file as a blob
       })
       .then((blob) => {
         // create a temporary URL for the blob
@@ -79,7 +79,7 @@ export default function UploadForm({ file, onFileChange }) {
         const a = document.createElement('a')
         a.href = url
         a.target = '_blank'
-        a.download = result.filename // Use the filename from the result
+        a.download = result.filename // use the filename from the result
         document.body.appendChild(a)
 
         a.click()
