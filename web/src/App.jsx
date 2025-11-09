@@ -3,16 +3,24 @@ import UploadForm from './components/UploadForm'
 
 // App() - main application component
 export default function App() {
-  // state for tracking file, API response, and errors
+  // state for tracking file, API response, errors, and validation states
   const [file, setFile] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [result, setResult] = useState(null)
+  const [fileError, setFileError] = useState(null)
 
   // handle file selection in UploadForm
   const handleFileChange = (e) => {
-    setFile(e.target.files[0])
-    setResult(null) // Reset previous result
+    const selectedFile = e.target.files[0]
+    setFile(selectedFile)
+    setResult(null)
+    setFileError(null)
+
+    // file type validation
+    if (selectedFile && !selectedFile.type.startsWith('image/')) {
+      setFileError('Invalid file type. Please upload an image.')
+    }
   }
 
   // handle form submission to call backend API for compression
@@ -22,15 +30,25 @@ export default function App() {
       return
     }
 
+    if (fileError) {
+      setError(fileError)
+      return
+    }
+
+    // reset states
     setLoading(true)
     setError(null)
 
+    // prepare form data
     const formData = new FormData()
     formData.append('avatar', file)
 
     try {
+      // use the API base URL from the .env file
+      const apiUrl = process.env.REACT_APP_API_URL
+
       // call backend to compress the image
-      const response = await fetch('http://localhost:8080/api/compress', {
+      const response = await fetch(`${apiUrl}/compress`, {
         method: 'POST',
         body: formData,
       })
@@ -64,13 +82,20 @@ export default function App() {
         <main>
           <UploadForm file={file} onFileChange={handleFileChange} />
 
+          {/* File validation errors */}
+          {fileError && (
+            <p className="text-red-600 font-medium mt-4">{fileError}</p>
+          )}
+
           {/* Status + Result */}
           <div className="mt-6 space-y-4">
             {loading && (
-              <p className="text-indigo-600 font-medium">Compressing image...</p>
+              <div className="flex justify-center items-center">
+                <div className="w-8 h-8 border-4 border-blue-500 border-dashed rounded-full animate-spin"></div>
+              </div>
             )}
             {error && (
-              <p className="text-red-600 font-medium">Error: {error}</p>
+              <p className="text-red-600 font-medium">{error}</p>
             )}
 
             {result && (
@@ -108,9 +133,9 @@ export default function App() {
           <div className="mt-6">
             <button
               onClick={handleCompress}
-              disabled={loading}
+              disabled={loading || !file || fileError}
               className={`px-5 py-2.5 text-white font-medium rounded transition-colors
-                ${loading
+                ${loading || !file || fileError
                   ? 'bg-gray-400 cursor-not-allowed'
                   : 'bg-green-600 hover:bg-green-700 focus:ring-2 focus:ring-green-400 focus:outline-none'
                 }`}
