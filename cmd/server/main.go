@@ -16,6 +16,7 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	"github.com/nabiladem/git-fit/internal/compressor"
 )
 
@@ -59,6 +60,19 @@ func init() {
 
 // main() - entry point
 func main() {
+	// load .env file if present
+	_ = godotenv.Load()
+
+	port := os.Getenv("PORT")
+    if port == "" {
+        port = "8080"
+    }
+
+    frontendURL := os.Getenv("FRONTEND_URL")
+    if frontendURL == "" {
+        frontendURL = "http://localhost:5173"
+    }
+
 	// new Gin router with no default middleware
 	r := gin.New()
 
@@ -85,6 +99,8 @@ func main() {
 	}))
 
 	// POST /api/compress
+	// sends a compressed image file in response
+	// returns JSON with download URL
 	r.POST("/api/compress", func(c *gin.Context) {
 		file, err := c.FormFile("avatar")
 		if err != nil {
@@ -216,6 +232,7 @@ func main() {
 		if c.Request.TLS != nil || c.GetHeader("X-Forwarded-Proto") == "https" {
 			scheme = "https"
 		}
+
 		host := c.Request.Host
 		downloadURL := fmt.Sprintf("%s://%s/api/download/%s?token=%s", scheme, host, id, token)
 
@@ -231,6 +248,9 @@ func main() {
 	})
 
 	// GET /api/download/:id
+	// serves the compressed file if token is valid
+	// returns 404 if not found or expired
+	// returns 403 if token is invalid
 	r.GET("/api/download/:id", func(c *gin.Context) {
 		id := c.Param("id")
 		token := c.Query("token")
