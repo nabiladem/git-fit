@@ -21,7 +21,7 @@ export default function UploadForm({ file, onFileChange }) {
     return () => URL.revokeObjectURL(url)
   }, [file])
 
-  /* onSubmit() - handles form submission */
+  // onSubmit() - handles form submission
   async function onSubmit(e) {
     e.preventDefault()
     setError(null)
@@ -61,7 +61,7 @@ export default function UploadForm({ file, onFileChange }) {
     }
   }
 
-  /* onDownload() - handle file download */
+  // onDownload() - handle file download
   function onDownload() {
     if (!result || !result.download_url) return
 

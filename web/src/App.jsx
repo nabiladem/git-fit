@@ -45,7 +45,7 @@ export default function App() {
 
     try {
       // use the API base URL from the .env file
-      const apiUrl = process.env.REACT_APP_API_URL
+      const apiUrl = process.env.VITE_API_URL
 
       // call backend to compress the image
       const response = await fetch(`${apiUrl}/compress`, {
