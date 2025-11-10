@@ -19,7 +19,10 @@ import (
 	"github.com/nabiladem/git-fit/internal/compressor"
 )
 
-// in-memory store for short-lived compressed files
+// storedFile struct holds data for a compressed file
+/* Data ([]byte) - file data; Mime (string) - MIME type of the file
+   Filename (string) - original filename; Expires (time.Time) - expiration time
+   Token (string) - access token for download authorization */
 type storedFile struct {
 	Data     []byte
 	Mime     string
@@ -36,9 +39,8 @@ var (
 	}{m: make(map[string]storedFile)}
 )
 
-// init() - initialize the janitor goroutine to clean up expired files
+// init() - initialize janitor goroutine to clean up expired files
 func init() {
-	// janitor goroutine to remove expired items every minute
 	go func() {
 		ticker := time.NewTicker(time.Minute)
 		defer ticker.Stop()
@@ -57,14 +59,29 @@ func init() {
 
 // main() - entry point
 func main() {
-	r := gin.Default()
+	// new Gin router with no default middleware
+	r := gin.New()
 
-	// enable CORS with specific settings (for local dev with Vite frontend)
+	// add logging and recovery middleware
+	r.Use(gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string {
+		// custom log format: [TIME] STATUS METHOD PATH (LATENCY)
+		return fmt.Sprintf("[%s] %d | %13v | %s | %s %s\n",
+			param.TimeStamp.Format("2006-01-02 15:04:05"),
+			param.StatusCode,
+			param.Latency,
+			param.ClientIP,
+			param.Method,
+			param.Path,
+		)
+	}))
+	r.Use(gin.Recovery())
+
+	// enable CORS (for local dev with Vite frontend)
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173"}, // React frontend URL
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}, // Allowed HTTP methods
-		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"}, // Allowed headers
-		AllowCredentials: true, // Allow credentials like cookies (if needed)
+		AllowOrigins:     []string{"http://localhost:5173"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
+		AllowCredentials: true,
 	}))
 
 	// POST /api/compress
@@ -82,6 +99,7 @@ func main() {
 		}
 		defer src.Close()
 
+		// create temp file to store upload
 		ext := filepath.Ext(file.Filename)
 		tmp, err := os.CreateTemp("", "gitfit-*-upload"+ext)
 		if err != nil {
@@ -92,7 +110,7 @@ func main() {
 		tmpPath := tmp.Name()
 		defer func() {
 			tmp.Close()
-			os.Remove(tmpPath) // cleanup
+			os.Remove(tmpPath)
 		}()
 
 		// copy uploaded content to temp file
@@ -121,18 +139,16 @@ func main() {
 			}
 		}
 
-		// prepare output temp file with proper extension
+		// determine output extension
 		outExt := ".jpg"
 		switch format {
 		case "png":
 			outExt = ".png"
 		case "gif":
 			outExt = ".gif"
-		default:
-			outExt = ".jpg"
 		}
 
-		// run compression
+		// create output temp file
 		outTmp, err := os.CreateTemp("", "gitfit-compressed-*"+outExt)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create output temp file"})
@@ -144,13 +160,12 @@ func main() {
 
 		// run compression
 		if err := compressor.CompressImage(tmpPath, outPath, maxSize, format, quality, false); err != nil {
-			// remove output if present
 			_ = os.Remove(outPath)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "compression failed", "detail": err.Error()})
 			return
 		}
 
-		// stat compressed file to get size and mime type
+		// get output file info
 		info, err := os.Stat(outPath)
 		if err != nil {
 			_ = os.Remove(outPath)
@@ -164,7 +179,6 @@ func main() {
 			mimeType = "application/octet-stream"
 		}
 
-		// read compressed file into memory
 		data, err := os.ReadFile(outPath)
 		if err != nil {
 			_ = os.Remove(outPath)
@@ -173,7 +187,7 @@ func main() {
 			return
 		}
 
-		// generate short-lived id and token
+		// generate short-lived id + token
 		idb := make([]byte, 16)
 		_, _ = rand.Read(idb)
 		id := hex.EncodeToString(idb)
@@ -181,7 +195,7 @@ func main() {
 		_, _ = rand.Read(tokn)
 		token := hex.EncodeToString(tokn)
 
-		// store in memory for short period (5 minutes)
+		// store in memory (expires in 5 min)
 		fileStore.Lock()
 		fileStore.m[id] = storedFile{
 			Data:     data,
@@ -190,39 +204,38 @@ func main() {
 			Expires:  time.Now().Add(5 * time.Minute),
 			Token:    token,
 		}
+
 		fileStore.Unlock()
 
-		// remove temp files immediately
+		// cleanup temp files
 		_ = os.Remove(outPath)
 		_ = os.Remove(tmpPath)
 
-		// build a download URL (preserve scheme and host from request)
+		// build a download URL
 		scheme := "http"
 		if c.Request.TLS != nil || c.GetHeader("X-Forwarded-Proto") == "https" {
 			scheme = "https"
 		}
-		
 		host := c.Request.Host
 		downloadURL := fmt.Sprintf("%s://%s/api/download/%s?token=%s", scheme, host, id, token)
 
-		// respond with JSON metadata including a signed download URL
 		resp := gin.H{
 			"filename":     filepath.Base(outPath),
 			"size":         info.Size(),
 			"mime":         mimeType,
 			"message":      "compression successful",
 			"download_url": downloadURL,
-			"expires_in":   300, // seconds
+			"expires_in":   300,
 		}
-
 		c.JSON(http.StatusOK, resp)
 	})
 
-	// GET /api/download/:id?token=<token>
+	// GET /api/download/:id
 	r.GET("/api/download/:id", func(c *gin.Context) {
 		id := c.Param("id")
 		token := c.Query("token")
 
+		// lookup file
 		fileStore.Lock()
 		f, ok := fileStore.m[id]
 		fileStore.Unlock()
@@ -232,27 +245,24 @@ func main() {
 			return
 		}
 
-		// constant-time token compare
 		if subtle.ConstantTimeCompare([]byte(token), []byte(f.Token)) != 1 {
 			c.JSON(http.StatusForbidden, gin.H{"error": "invalid token"})
 			return
 		}
 
-		// serve bytes
 		c.Header("Content-Type", f.Mime)
 		c.Header("Content-Disposition", "attachment; filename="+strconv.Quote(f.Filename))
 		c.Data(http.StatusOK, f.Mime, f.Data)
 	})
 
-	// optionally serve your built React frontend
+	// serve static frontend files
 	r.Static("/assets", "./web/dist/assets")
 	r.NoRoute(func(c *gin.Context) {
 		c.File("./web/dist/index.html")
 	})
 
-	// start the server
 	addr := ":8080"
-	fmt.Println("Starting server on", addr)
+	fmt.Println("🚀 Server running on", addr)
 	if err := r.Run(addr); err != nil {
 		fmt.Fprintln(os.Stderr, "server error:", err)
 		os.Exit(1)
