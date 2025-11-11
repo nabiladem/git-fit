@@ -64,14 +64,16 @@ func main() {
 	_ = godotenv.Load()
 
 	port := os.Getenv("PORT")
-    if port == "" {
-        port = "8080"
-    }
+	if port == "" {
+		port = "8080"
+	}
 
-    frontendURL := os.Getenv("FRONTEND_URL")
-    if frontendURL == "" {
-        frontendURL = "http://localhost:5173"
-    }
+	frontendURL := os.Getenv("FRONTEND_URL")
+	if frontendURL == "" {
+		frontendURL = "http://localhost:5173"
+	}
+
+	startTime := time.Now() // track uptime
 
 	// new Gin router with no default middleware
 	r := gin.New()
@@ -92,11 +94,22 @@ func main() {
 
 	// enable CORS (for local dev with Vite frontend)
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173"},
+		AllowOrigins:     []string{frontendURL},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
 		AllowCredentials: true,
 	}))
+
+	// GET /api/health
+	// simple health check for uptime and status
+	r.GET("/api/health", func(c *gin.Context) {
+		uptime := time.Since(startTime).Truncate(time.Second)
+		c.JSON(http.StatusOK, gin.H{
+			"status":    "ok",
+			"uptime":    uptime.String(),
+			"timestamp": time.Now().Format(time.RFC3339),
+		})
+	})
 
 	// POST /api/compress
 	// sends a compressed image file in response
@@ -220,7 +233,6 @@ func main() {
 			Expires:  time.Now().Add(5 * time.Minute),
 			Token:    token,
 		}
-
 		fileStore.Unlock()
 
 		// cleanup temp files
@@ -249,8 +261,6 @@ func main() {
 
 	// GET /api/download/:id
 	// serves the compressed file if token is valid
-	// returns 404 if not found or expired
-	// returns 403 if token is invalid
 	r.GET("/api/download/:id", func(c *gin.Context) {
 		id := c.Param("id")
 		token := c.Query("token")
@@ -281,7 +291,7 @@ func main() {
 		c.File("./web/dist/index.html")
 	})
 
-	addr := ":8080"
+	addr := ":" + port
 	fmt.Println("🚀 Server running on", addr)
 	if err := r.Run(addr); err != nil {
 		fmt.Fprintln(os.Stderr, "server error:", err)
