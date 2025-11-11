@@ -287,7 +287,17 @@ func main() {
 
 	// serve static frontend files
 	r.Static("/assets", "./web/dist/assets")
+
+	// handle unknown API routes with JSON 404
 	r.NoRoute(func(c *gin.Context) {
+		if len(c.Request.URL.Path) >= 5 && c.Request.URL.Path[:5] == "/api/" {
+			c.JSON(http.StatusNotFound, gin.H {
+				"error":   "not found",
+				"message": "API endpoint does not exist",
+			})
+			return
+		}
+		// otherwise, serve React index.html (for client-side routing)
 		c.File("./web/dist/index.html")
 	})
 
