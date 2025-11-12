@@ -17,6 +17,7 @@ gitfit
 *.gif
 compress
 gitfit-compressed-*.jpg
+!favicon.png
 
 # Logs and databases
 *.log
