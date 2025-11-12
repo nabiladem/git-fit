@@ -140,7 +140,14 @@ export default function App() {
                     : 'bg-green-600 hover:bg-green-700 focus:ring-2 focus:ring-green-400 focus:outline-none'
                 }`}
             >
-              {loading ? 'Compressing…' : 'Compress Image'}
+              {loading ? (
+                <div className="flex items-center gap-2">
+                  <Spinner size={5} />
+                  <span>Compressing…</span>
+                </div>
+              ) : (
+                'Compress Image'
+              )}
             </button>
           </div>
         </main>
