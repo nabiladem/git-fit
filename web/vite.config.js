@@ -1,25 +1,25 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  
+
   // Base path for the build (you can adjust this based on your project needs)
   base: '/',
 
   // Define development server configuration
   server: {
     // The port Vite dev server will run on
-    port: 5173,  // Default for Vite
-    
+    port: 5173, // Default for Vite
+
     // Set up a proxy for API calls to your Go backend during development
     proxy: {
       '/api': {
         target: 'http://localhost:8080', // Go backend (API) port
         changeOrigin: true, // Ensures that the host header is rewritten
         secure: false, // Allows connection even if there is no SSL (useful in dev)
-        rewrite: (path) => path.replace(/^\/api/, '') // Optional: remove /api from request path
+        rewrite: (path) => path.replace(/^\/api/, ''), // Optional: remove /api from request path
       },
     },
   },
@@ -42,4 +42,4 @@ export default defineConfig({
   define: {
     'process.env': {},
   },
-});
+})

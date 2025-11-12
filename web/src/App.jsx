@@ -75,7 +75,8 @@ export default function App() {
         <header className="mb-6 text-left">
           <h1 className="text-2xl font-semibold text-gray-900">git fit</h1>
           <p className="mt-2 text-gray-600">
-            Compress images to GitHub avatar limits (1MB). Upload an image and download the compressed avatar.
+            Compress images to GitHub avatar limits (1MB). Upload an image and
+            download the compressed avatar.
           </p>
         </header>
 
@@ -94,9 +95,7 @@ export default function App() {
                 <div className="w-8 h-8 border-4 border-blue-500 border-dashed rounded-full animate-spin"></div>
               </div>
             )}
-            {error && (
-              <p className="text-red-600 font-medium">{error}</p>
-            )}
+            {error && <p className="text-red-600 font-medium">{error}</p>}
 
             {result && (
               <div className="p-4 border rounded bg-green-50">
@@ -135,9 +134,10 @@ export default function App() {
               onClick={handleCompress}
               disabled={loading || !file || fileError}
               className={`px-5 py-2.5 text-white font-medium rounded transition-colors
-                ${loading || !file || fileError
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-green-600 hover:bg-green-700 focus:ring-2 focus:ring-green-400 focus:outline-none'
+                ${
+                  loading || !file || fileError
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-green-600 hover:bg-green-700 focus:ring-2 focus:ring-green-400 focus:outline-none'
                 }`}
             >
               {loading ? 'Compressing…' : 'Compress Image'}

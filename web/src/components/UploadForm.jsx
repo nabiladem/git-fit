@@ -40,12 +40,16 @@ export default function UploadForm({ file, onFileChange }) {
     fd.append('quality', String(quality))
 
     // API Base URL (for dev mode)
-    const apiBase = import.meta.env && import.meta.env.DEV ? 'http://localhost:8080' : ''
+    const apiBase =
+      import.meta.env && import.meta.env.DEV ? 'http://localhost:8080' : ''
 
     setLoading(true)
     try {
       // call backend API to compress the image
-      const res = await fetch(apiBase + '/api/compress', { method: 'POST', body: fd })
+      const res = await fetch(apiBase + '/api/compress', {
+        method: 'POST',
+        body: fd,
+      })
       const data = await res.json()
 
       if (!res.ok) {
@@ -97,20 +101,32 @@ export default function UploadForm({ file, onFileChange }) {
     <form onSubmit={onSubmit} className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-gray-700">Image</label>
-        <input type="file" accept="image/*" onChange={onFileChange} className="mt-1" />
+        <input
+          type="file"
+          accept="image/*"
+          onChange={onFileChange}
+          className="mt-1"
+        />
       </div>
 
       {/* Image Preview */}
       {preview && (
         <div className="flex items-center gap-4">
-          <img src={preview} alt="preview" className="w-24 h-24 object-cover rounded" />
-          <div className="text-sm text-gray-600">Selected: {file && file.name}</div>
+          <img
+            src={preview}
+            alt="preview"
+            className="w-24 h-24 object-cover rounded"
+          />
+          <div className="text-sm text-gray-600">
+            Selected: {file && file.name}
+          </div>
         </div>
       )}
 
       {/* Form Controls */}
       <div className="grid grid-cols-2 gap-4">
-        <label className="text-sm">Max size (bytes)
+        <label className="text-sm">
+          Max size (bytes)
           <input
             type="number"
             value={maxSize}
@@ -118,7 +134,8 @@ export default function UploadForm({ file, onFileChange }) {
             className="mt-1 block w-full border rounded px-2 py-1"
           />
         </label>
-        <label className="text-sm">Format
+        <label className="text-sm">
+          Format
           <select
             value={format}
             onChange={(e) => setFormat(e.target.value)}
@@ -132,7 +149,8 @@ export default function UploadForm({ file, onFileChange }) {
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <label className="text-sm">Quality
+        <label className="text-sm">
+          Quality
           <input
             type="number"
             value={quality}
@@ -162,9 +180,15 @@ export default function UploadForm({ file, onFileChange }) {
       {/* Display the compression result */}
       {result && (
         <div className="p-3 border rounded bg-green-50">
-          <div><strong>Filename:</strong> {result.filename}</div>
-          <div><strong>Size:</strong> {result.size} bytes</div>
-          <div><strong>Type:</strong> {result.mime}</div>
+          <div>
+            <strong>Filename:</strong> {result.filename}
+          </div>
+          <div>
+            <strong>Size:</strong> {result.size} bytes
+          </div>
+          <div>
+            <strong>Type:</strong> {result.mime}
+          </div>
           {result.download_url && (
             <div className="mt-2">
               <button
