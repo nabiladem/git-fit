@@ -25,5 +25,13 @@ jobs:
 
       - name: Build and push Docker image
         run: |
-          docker build -t your-dockerhub-username/git-fit:latest .
-          docker push your-dockerhub-username/git-fit:latest
+          IMAGE_NAME=${{ secrets.DOCKER_USERNAME }}/git-fit
+          IMAGE_TAG=$IMAGE_NAME:${GITHUB_SHA::7}  # Use commit SHA for unique image version
+          
+          # Build and tag image
+          docker build -t $IMAGE_TAG .
+          docker tag $IMAGE_TAG $IMAGE_NAME:latest  # Tag with "latest" too
+
+          # Push image
+          docker push $IMAGE_TAG
+          docker push $IMAGE_NAME:latest
