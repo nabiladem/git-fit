@@ -44,10 +44,6 @@ jobs:
             **/node_modules
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
 
-      - name: Install Node dependencies
-        working-directory: ./web
-        run: npm ci
-
       - name: Run Go tests with coverage
         run: |
           mkdir -p coverage
@@ -55,8 +51,8 @@ jobs:
           go tool cover -func=coverage/coverage.out
 
       - name: Run ESLint
-        working-directory: ./web
-        run: npx eslint --config .eslintrc.json . --ext .js,.jsx,.ts,.tsx
+        working-directory: .
+        run: npx eslint . --ext .js,.jsx,.ts,.tsx --config .eslintrc.json
 
       - name: Check Prettier formatting
         working-directory: ./web
