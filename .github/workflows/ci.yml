@@ -56,7 +56,7 @@ jobs:
 
       - name: Run ESLint
         working-directory: ./web
-        run: npx eslint . --ext .js,.jsx,.ts,.tsx
+        run: npx eslint --config .eslintrc.json . --ext .js,.jsx,.ts,.tsx
 
       - name: Check Prettier formatting
         working-directory: ./web
