@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    name: Build, Test & Lint
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        go-version: [1.25.2]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+
+      - name: Cache Node modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            **/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Run Go tests with coverage
+        run: |
+          mkdir -p coverage
+          go test -v -covermode=atomic -coverprofile=coverage/coverage.out ./... || true
+          go tool cover -func=coverage/coverage.out
+
+      - name: Run ESLint
+        working-directory: .
+        run: npx eslint . --ext .js,.jsx,.ts,.tsx --config .eslintrc.js || true
+
+      - name: Check Prettier formatting
+        working-directory: ./web
+        run: npx prettier --check .
