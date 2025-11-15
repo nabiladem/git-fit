@@ -127,29 +127,6 @@ export default function App() {
               </div>
             )}
           </div>
-
-          {/* Compress Button */}
-          <div className="mt-6">
-            <button
-              onClick={handleCompress}
-              disabled={loading || !file || fileError}
-              className={`px-5 py-2.5 text-white font-medium rounded transition-colors
-                ${
-                  loading || !file || fileError
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-green-600 hover:bg-green-700 focus:ring-2 focus:ring-green-400 focus:outline-none'
-                }`}
-            >
-              {loading ? (
-                <div className="flex items-center gap-2">
-                  <Spinner size={5} />
-                  <span>Compressing…</span>
-                </div>
-              ) : (
-                'Compress Image'
-              )}
-            </button>
-          </div>
         </main>
       </div>
     </div>
