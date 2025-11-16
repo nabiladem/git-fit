@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import Spinner from './Spinner'
 
 // UploadForm() - image upload and compression form component
 export default function UploadForm({ file, onFileChange }) {
@@ -10,6 +11,7 @@ export default function UploadForm({ file, onFileChange }) {
   const [error, setError] = useState(null)
   const [result, setResult] = useState(null)
 
+  // effect to update the preview when a new file is selected
   useEffect(() => {
     if (!file) {
       setPreview(null)
@@ -32,7 +34,7 @@ export default function UploadForm({ file, onFileChange }) {
       return
     }
 
-    // prepare form data
+    // prepare form data to send to the backend
     const fd = new FormData()
     fd.append('avatar', file, file.name)
     fd.append('maxsize', String(maxSize))
@@ -59,21 +61,21 @@ export default function UploadForm({ file, onFileChange }) {
         setResult(data)
       }
     } catch (err) {
-      setError(err.message || String(err)) // handle any fetch errors
+      setError(err.message || String(err))
     } finally {
       setLoading(false)
     }
   }
 
-  // onDownload() - handle file download
+  // onDownload() - Handle file download
   function onDownload() {
     if (!result || !result.download_url) return
 
-    // use fetch to get the file
+    // use fetch to get the file as a blob
     fetch(result.download_url)
       .then((response) => {
         if (!response.ok) throw new Error('Download failed')
-        return response.blob() // get the file as a blob
+        return response.blob()
       })
       .then((blob) => {
         // create a temporary URL for the blob
@@ -83,7 +85,7 @@ export default function UploadForm({ file, onFileChange }) {
         const a = document.createElement('a')
         a.href = url
         a.target = '_blank'
-        a.download = result.filename // use the filename from the result
+        a.download = result.filename
         document.body.appendChild(a)
 
         a.click()
@@ -170,7 +172,11 @@ export default function UploadForm({ file, onFileChange }) {
           disabled={loading}
           className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
         >
-          {loading ? 'Compressing…' : 'Compress'}
+          {loading ? (
+            <Spinner size={6} color="border-white" /> // Display spinner when loading
+          ) : (
+            'Compress'
+          )}
         </button>
       </div>
 

@@ -11,6 +11,7 @@ export default function App() {
   const [fileError, setFileError] = useState(null)
 
   // handle file selection in UploadForm
+  // e - event object from file input change
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0]
     setFile(selectedFile)
@@ -45,7 +46,7 @@ export default function App() {
 
     try {
       // use the API base URL from the .env file
-      const apiUrl = process.env.VITE_API_URL
+      const apiUrl = process.env.VITE_API_URL || 'http://localhost:8080'
 
       // call backend to compress the image
       const response = await fetch(`${apiUrl}/compress`, {

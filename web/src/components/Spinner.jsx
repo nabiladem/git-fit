@@ -1,5 +1,6 @@
 import React from 'react'
 
+// Spinner() - loading spinner component
 export default function Spinner({ size = 6, color = 'border-green-600' }) {
   return (
     <div
