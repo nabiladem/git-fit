@@ -1,12 +1,19 @@
 import React from 'react'
 
-// Spinner() - loading spinner component
-export default function Spinner({ size = 6, color = 'border-green-600' }) {
+// Spinner() - a simple loading spinner component
+export default function Spinner({ size = 28, color = 'border-white' }) {
   return (
     <div
-      className={`w-${size} h-${size} border-4 border-gray-200 ${color} border-t-transparent rounded-full animate-spin`}
-      role="status"
-      aria-label="Loading"
+      className={`animate-spin inline-block`}
+      style={{
+        width: size,
+        height: size,
+        borderWidth: '3px',
+        borderStyle: 'solid',
+        borderColor: `rgba(255, 255, 255, 0.3)`,
+        borderTopColor: 'white',
+        borderRadius: '50%',
+      }}
     ></div>
   )
 }

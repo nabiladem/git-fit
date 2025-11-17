@@ -57,7 +57,6 @@ export default function UploadForm({ file, onFileChange }) {
       if (!res.ok) {
         setError(data.error || data.message || 'Compression failed')
       } else {
-        // store result on successful compression
         setResult(data)
       }
     } catch (err) {
@@ -67,7 +66,7 @@ export default function UploadForm({ file, onFileChange }) {
     }
   }
 
-  // onDownload() - Handle file download
+  // onDownload() - handle file download
   function onDownload() {
     if (!result || !result.download_url) return
 
@@ -78,10 +77,8 @@ export default function UploadForm({ file, onFileChange }) {
         return response.blob()
       })
       .then((blob) => {
-        // create a temporary URL for the blob
         const url = URL.createObjectURL(blob)
 
-        // create a temporary <a> element for downloading
         const a = document.createElement('a')
         a.href = url
         a.target = '_blank'
@@ -170,10 +167,13 @@ export default function UploadForm({ file, onFileChange }) {
         <button
           type="submit"
           disabled={loading}
-          className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
         >
           {loading ? (
-            <Spinner size={6} color="border-white" /> // Display spinner when loading
+            <>
+              <Spinner size={28} />
+              <span>Compressing...</span>
+            </>
           ) : (
             'Compress'
           )}
