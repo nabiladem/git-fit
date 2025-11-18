@@ -302,7 +302,7 @@ func main() {
 	})
 
 	addr := ":" + port
-	fmt.Println("🚀 Server running on", addr)
+	fmt.Println("Server running on", addr)
 	if err := r.Run(addr); err != nil {
 		fmt.Fprintln(os.Stderr, "server error:", err)
 		os.Exit(1)
