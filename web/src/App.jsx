@@ -49,7 +49,7 @@ export default function App() {
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
       // call backend to compress the image
-      const response = await fetch(`${apiUrl}/compress`, {
+      const response = await fetch(`${apiUrl}/api/compress`, {
         method: 'POST',
         body: formData,
       })
