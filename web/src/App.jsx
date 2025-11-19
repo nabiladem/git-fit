@@ -46,7 +46,7 @@ export default function App() {
 
     try {
       // use the API base URL from the .env file
-      const apiUrl = process.env.VITE_API_URL || 'http://localhost:8080'
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
       // call backend to compress the image
       const response = await fetch(`${apiUrl}/compress`, {
