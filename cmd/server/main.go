@@ -58,16 +58,8 @@ func init() {
 	}()
 }
 
-// main() - entry point
-func main() {
-	// load .env file if present
-	_ = godotenv.Load()
-
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-
+// setupRouter() - initialize router with middleware and routes, returning new router instance
+func setupRouter() *gin.Engine {
 	frontendURL := os.Getenv("FRONTEND_URL")
 	if frontendURL == "" {
 		frontendURL = "http://localhost:5173"
@@ -275,6 +267,7 @@ func main() {
 			return
 		}
 
+		// validate token
 		if subtle.ConstantTimeCompare([]byte(token), []byte(f.Token)) != 1 {
 			c.JSON(http.StatusForbidden, gin.H{"error": "invalid token"})
 			return
@@ -291,15 +284,32 @@ func main() {
 	// handle unknown API routes with JSON 404
 	r.NoRoute(func(c *gin.Context) {
 		if len(c.Request.URL.Path) >= 5 && c.Request.URL.Path[:5] == "/api/" {
-			c.JSON(http.StatusNotFound, gin.H {
+			c.JSON(http.StatusNotFound, gin.H{
 				"error":   "not found",
 				"message": "API endpoint does not exist",
 			})
 			return
 		}
+
 		// otherwise, serve React index.html (for client-side routing)
 		c.File("./web/dist/index.html")
 	})
+
+	return r
+}
+
+// main() - entry point
+func main() {
+	// load .env file if present
+	_ = godotenv.Load()
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	// setup router
+	r := setupRouter()
 
 	addr := ":" + port
 	fmt.Println("Server running on", addr)
