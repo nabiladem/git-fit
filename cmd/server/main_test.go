@@ -2,234 +2,179 @@ package main
 
 import (
 	"bytes"
-	"io"
+	"encoding/json"
+	"image"
+	"image/color"
+	"image/png"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
-	"os"
-	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/nabiladem/git-fit/internal/compressor"
 )
 
-func setupRouter() *gin.Engine {
-	os.Setenv("FRONTEND_URL", "http://localhost:5173")
-
-	startTime := time.Now()
-
-	r := gin.New()
-	r.Use(gin.Logger())
-	r.Use(gin.Recovery())
-
-	r.Use(func(c *gin.Context) { c.Next() })
-
-	r.GET("/api/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"status":    "ok",
-			"uptime":    time.Since(startTime).Truncate(time.Second).String(),
-			"timestamp": time.Now().Format(time.RFC3339),
-		})
-	})
-
-	r.POST("/api/compress", func(c *gin.Context) {
-		file, err := c.FormFile("avatar")
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "missing 'avatar' file field"})
-			return
+// createTestImage() - create an image for testing, returns image data and error
+func createTestImage() ([]byte, error) {
+	img := image.NewRGBA(image.Rect(0, 0, 100, 100))
+	for x := 0; x < 100; x++ {
+		for y := 0; y < 100; y++ {
+			img.Set(x, y, color.RGBA{255, 0, 0, 255})
 		}
+	}
 
-		src, _ := file.Open()
-		defer src.Close()
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, img); err != nil {
+		return nil, err
+	}
 
-		ext := filepath.Ext(file.Filename)
-		tmp, _ := os.CreateTemp("", "gitfit-*-upload"+ext)
-		tmpPath := tmp.Name()
-		io.Copy(tmp, src)
-		tmp.Close()
-
-		outTmp, _ := os.CreateTemp("", "gitfit-compressed-*.jpg")
-		outPath := outTmp.Name()
-		outTmp.Close()
-
-		_ = compressor.CompressImage(tmpPath, outPath, 1048576, "jpeg", 85, false)
-
-		data, _ := os.ReadFile(outPath)
-		info, _ := os.Stat(outPath)
-
-		id := "testfile"
-		token := "tokentest"
-
-		fileStore.Lock()
-		fileStore.m[id] = storedFile{
-			Data:     data,
-			Mime:     "image/jpeg",
-			Filename: "compressed.jpg",
-			Expires:  time.Now().Add(5 * time.Minute),
-			Token:    token,
-		}
-		fileStore.Unlock()
-
-		os.Remove(tmpPath)
-		os.Remove(outPath)
-
-		c.JSON(200, gin.H{
-			"filename":     "compressed.jpg",
-			"size":         info.Size(),
-			"mime":         "image/jpeg",
-			"download_url": "http://test/api/download/testfile?token=tokentest",
-			"expires_in":   300,
-		})
-	})
-
-	r.GET("/api/download/:id", func(c *gin.Context) {
-		id := c.Param("id")
-		token := c.Query("token")
-
-		fileStore.Lock()
-		f, ok := fileStore.m[id]
-		fileStore.Unlock()
-
-		if !ok || time.Now().After(f.Expires) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "file not found or expired"})
-			return
-		}
-
-		if token != f.Token {
-			c.JSON(http.StatusForbidden, gin.H{"error": "invalid token"})
-			return
-		}
-
-		c.Data(200, f.Mime, f.Data)
-	})
-
-	os.MkdirAll("./web/dist/assets", 0755)
-	os.WriteFile("./web/dist/assets/test.txt", []byte("asset file"), 0644)
-	os.WriteFile("./web/dist/index.html", []byte("<html>OK</html>"), 0644)
-
-	r.Static("/assets", "./web/dist/assets")
-
-	r.NoRoute(func(c *gin.Context) {
-		if len(c.Request.URL.Path) >= 5 && c.Request.URL.Path[:5] == "/api/" {
-			c.JSON(404, gin.H{
-				"error":   "not found",
-				"message": "API endpoint does not exist",
-			})
-			return
-		}
-		c.File("./web/dist/index.html")
-	})
-
-	return r
+	return buf.Bytes(), nil
 }
 
-func TestHealth(t *testing.T) {
+// TestHealthCheck() - test health check endpoint
+func TestHealthCheck(t *testing.T) {
+	gin.SetMode(gin.TestMode)
 	r := setupRouter()
+
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/health", nil)
 	r.ServeHTTP(w, req)
 
-	if w.Code != 200 {
-		t.Fatalf("expected 200, got %d", w.Code)
+	if w.Code != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", w.Code)
+	}
+
+	var resp map[string]string
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("Failed to parse JSON response: %v", err)
+	}
+
+	if resp["status"] != "ok" {
+		t.Errorf("Expected status 'ok', got '%s'", resp["status"])
 	}
 }
 
-func TestCompressFlow(t *testing.T) {
+// TestCompressEndpoint() - test compress endpoint
+func TestCompressEndpoint(t *testing.T) {
+	gin.SetMode(gin.TestMode)
 	r := setupRouter()
 
+	// create a test image
+	imgData, err := createTestImage()
+	if err != nil {
+		t.Fatalf("Failed to create test image: %v", err)
+	}
+
+	// create multipart form
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
-	part, _ := writer.CreateFormFile("avatar", "test.jpg")
-	part.Write([]byte("fakeimage"))
+	part, err := writer.CreateFormFile("avatar", "test.png")
+	if err != nil {
+		t.Fatalf("Failed to create form file: %v", err)
+	}
+
+	if _, err := part.Write(imgData); err != nil {
+		t.Fatalf("Failed to write image data: %v", err)
+	}
 	writer.Close()
 
-	req := httptest.NewRequest("POST", "/api/compress", body)
-	req.Header.Set("Content-Type", writer.FormDataContentType())
-
+	// send request
 	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/api/compress", body)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
 	r.ServeHTTP(w, req)
 
-	if w.Code != 200 {
-		t.Fatalf("compress endpoint returned %d: %s", w.Code, w.Body.String())
+	if w.Code != http.StatusOK {
+		t.Errorf("Expected status 200, got %d. Body: %s", w.Code, w.Body.String())
 	}
 
-	req2 := httptest.NewRequest("GET", "/api/download/testfile?token=tokentest", nil)
-	w2 := httptest.NewRecorder()
-	r.ServeHTTP(w2, req2)
-
-	if w2.Code != 200 {
-		t.Fatalf("download failed with %d", w2.Code)
+	// parse response
+	var resp map[string]interface{}
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("Failed to parse JSON response: %v", err)
 	}
 
-	if string(w2.Body.Bytes()) != "fakeimage" {
-		t.Fatalf("download returned unexpected data: %q", w2.Body.String())
+	if _, ok := resp["download_url"]; !ok {
+		t.Error("Response missing 'download_url'")
 	}
 }
 
-func TestDownloadInvalidToken(t *testing.T) {
+// TestCompressEndpointMissingFile() - test compress endpoint with missing file
+func TestCompressEndpointMissingFile(t *testing.T) {
+	gin.SetMode(gin.TestMode)
 	r := setupRouter()
 
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/api/compress", nil)
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("Expected status 400, got %d", w.Code)
+	}
+}
+
+// TestDownloadEndpoint() - test download endpoint
+func TestDownloadEndpoint(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	r := setupRouter()
+
+	// manually inject a file into the store
+	id := "test-id"
+	token := "test-token"
+
 	fileStore.Lock()
-	fileStore.m["abc"] = storedFile{
-		Data:     []byte("xyz"),
-		Mime:     "image/jpeg",
-		Filename: "x.jpg",
-		Token:    "real",
-		Expires:  time.Now().Add(1 * time.Minute),
+	fileStore.m[id] = storedFile{
+		Data:     []byte("fake image data"),
+		Mime:     "image/png",
+		Filename: "test.png",
+		Expires:  time.Now().Add(time.Minute),
+		Token:    token,
 	}
 	fileStore.Unlock()
 
+	// test valid download
 	w := httptest.NewRecorder()
-	req := httptest.NewRequest("GET", "/api/download/abc?token=wrong", nil)
+	req, _ := http.NewRequest("GET", "/api/download/"+id+"?token="+token, nil)
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", w.Code)
+	}
+
+	if w.Body.String() != "fake image data" {
+		t.Errorf("Expected body 'fake image data', got '%s'", w.Body.String())
+	}
+
+	// test invalid token
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("GET", "/api/download/"+id+"?token=wrong", nil)
 	r.ServeHTTP(w, req)
 
 	if w.Code != http.StatusForbidden {
-		t.Fatalf("expected 403, got %d", w.Code)
+		t.Errorf("Expected status 403, got %d", w.Code)
+	}
+
+	// test missing file
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("GET", "/api/download/missing?token="+token, nil)
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusNotFound {
+		t.Errorf("Expected status 404, got %d", w.Code)
 	}
 }
 
-func TestAPINotFound(t *testing.T) {
+// TestNotFound() - test not found endpoint
+func TestNotFound(t *testing.T) {
+	gin.SetMode(gin.TestMode)
 	r := setupRouter()
 
 	w := httptest.NewRecorder()
-	req := httptest.NewRequest("GET", "/api/does-not-exist", nil)
+	req, _ := http.NewRequest("GET", "/api/unknown", nil)
 	r.ServeHTTP(w, req)
 
-	if w.Code != 404 {
-		t.Fatalf("expected 404, got %d", w.Code)
-	}
-}
-
-func TestStaticAssets(t *testing.T) {
-	r := setupRouter()
-
-	w := httptest.NewRecorder()
-	req := httptest.NewRequest("GET", "/assets/test.txt", nil)
-	r.ServeHTTP(w, req)
-
-	if w.Code != 200 {
-		t.Fatalf("assets returned %d", w.Code)
-	}
-
-	if w.Body.String() != "asset file" {
-		t.Fatalf("unexpected asset data: %q", w.Body.String())
-	}
-}
-
-func TestFrontendFallback(t *testing.T) {
-	r := setupRouter()
-
-	w := httptest.NewRecorder()
-	req := httptest.NewRequest("GET", "/some/random/path", nil)
-	r.ServeHTTP(w, req)
-
-	if w.Code != 200 {
-		t.Fatalf("expected 200 for frontend fallback, got %d", w.Code)
-	}
-
-	if w.Body.String() != "<html>OK</html>" {
-		t.Fatalf("fallback returned unexpected content: %q", w.Body.String())
+	if w.Code != http.StatusNotFound {
+		t.Errorf("Expected status 404, got %d", w.Code)
 	}
 }
