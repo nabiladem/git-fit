@@ -1,7 +1,7 @@
 import React from 'react'
 
 // Spinner() - a simple loading spinner component
-export default function Spinner({ size = 28 }) {
+export default function Spinner({ size = 28, color = 'border-white' }) {
   return (
     <div
       className={`animate-spin inline-block`}
