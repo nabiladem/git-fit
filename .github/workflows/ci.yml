@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build-and-test:
@@ -50,9 +50,13 @@ jobs:
           go test -v -covermode=atomic -coverprofile=coverage/coverage.out ./... || true
           go tool cover -func=coverage/coverage.out
 
+      - name: Install Node dependencies
+        working-directory: ./web
+        run: npm ci
+
       - name: Run ESLint
-        working-directory: .
-        run: npx eslint . --ext .js,.jsx,.ts,.tsx --config .eslintrc.js || true
+        working-directory: ./web
+        run: npm run lint
 
       - name: Check Prettier formatting
         working-directory: ./web

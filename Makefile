@@ -6,6 +6,23 @@ BIN_DIR=$(shell go env GOPATH)/bin
 
 all: build
 
+server:
+	@echo "Running server..."
+	go run ./cmd/server/main.go
+
+web:
+	@echo "Running frontend..."
+	cd web && npm run dev
+
+web-build:
+	@echo "Building frontend..."
+	cd web && npm run build
+
+test:
+	@echo "Running tests..."
+	go test -v ./...
+
+
 build:
 	@echo "Building $(BINARY_NAME)..."
 	go build -o $(BINARY_NAME) $(CMD_PATH)
