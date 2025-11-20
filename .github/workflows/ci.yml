@@ -50,6 +50,10 @@ jobs:
           go test -v -covermode=atomic -coverprofile=coverage/coverage.out ./... || true
           go tool cover -func=coverage/coverage.out
 
+      - name: Install Node dependencies
+        working-directory: ./web
+        run: npm ci
+
       - name: Run ESLint
         working-directory: ./web
         run: npm run lint
