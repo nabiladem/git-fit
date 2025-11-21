@@ -36,7 +36,6 @@ export default function App() {
       return
     }
 
-    // reset states
     setLoading(true)
     setError(null)
 
@@ -58,7 +57,6 @@ export default function App() {
         throw new Error('Compression failed. Please try again.')
       }
 
-      // parse JSON response
       const data = await response.json()
       if (data.error) throw new Error(data.error)
 
@@ -71,13 +69,14 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 font-sans p-6">
-      <div className="w-full max-w-3xl bg-white rounded-lg shadow-lg p-6">
-        <header className="mb-6 text-left">
-          <h1 className="text-2xl font-semibold text-gray-900">git fit</h1>
-          <p className="mt-2 text-gray-600">
-            Compress images to GitHub avatar limits (1MB). Upload an image and
-            download the compressed avatar.
+    <div className="min-h-screen flex items-center justify-center p-6">
+      <div className="w-full max-w-3xl bg-white/30 backdrop-blur-lg rounded-2xl shadow-xl border border-white/20 p-8">
+        <header className="mb-8 text-center">
+          <h1 className="text-4xl font-bold text-white drop-shadow-md mb-2">
+            git fit
+          </h1>
+          <p className="text-white/90 text-lg font-medium">
+            Compress images to GitHub avatar limits (1MB).
           </p>
         </header>
 
@@ -86,45 +85,56 @@ export default function App() {
 
           {/* File validation errors */}
           {fileError && (
-            <p className="text-red-600 font-medium mt-4">{fileError}</p>
+            <p className="text-red-100 bg-red-500/50 border border-red-500/50 rounded-lg p-3 font-medium mt-4 text-center">
+              {fileError}
+            </p>
           )}
 
           {/* Status + Result */}
           <div className="mt-6 space-y-4">
             {loading && (
               <div className="flex justify-center items-center">
-                <div className="w-8 h-8 border-4 border-blue-500 border-dashed rounded-full animate-spin"></div>
+                <Spinner size={40} />
               </div>
             )}
-            {error && <p className="text-red-600 font-medium">{error}</p>}
+            {error && (
+              <p className="text-red-100 bg-red-500/50 border border-red-500/50 rounded-lg p-3 font-medium text-center">
+                {error}
+              </p>
+            )}
 
             {result && (
-              <div className="p-4 border rounded bg-green-50">
-                <h2 className="text-lg font-semibold text-green-800">
+              <div className="p-6 border border-white/30 rounded-xl bg-white/20 backdrop-blur-md shadow-inner text-white">
+                <h2 className="text-xl font-bold mb-4 text-center">
                   Compression Successful!
                 </h2>
-                <p className="text-sm text-gray-700 mt-1">
-                  <strong>Filename:</strong> {result.filename}
-                </p>
-                <p className="text-sm text-gray-700">
-                  <strong>Size:</strong> {result.size} bytes
-                </p>
-                <p className="text-sm text-gray-700">
-                  <strong>MIME Type:</strong> {result.mime}
-                </p>
-                <p className="text-sm text-gray-700 mt-1">
-                  <a
-                    href={result.download_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:text-blue-800 underline"
-                  >
-                    Open in new tab
-                  </a>
-                </p>
-                <p className="text-sm text-gray-500 mt-1">
-                  Expires in: {result.expires_in} seconds
-                </p>
+                <div className="space-y-2 text-sm">
+                  <p>
+                    <strong className="font-semibold">Filename:</strong>{' '}
+                    {result.filename}
+                  </p>
+                  <p>
+                    <strong className="font-semibold">Size:</strong>{' '}
+                    {result.size} bytes
+                  </p>
+                  <p>
+                    <strong className="font-semibold">MIME Type:</strong>{' '}
+                    {result.mime}
+                  </p>
+                  <p className="pt-2">
+                    <a
+                      href={result.download_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block bg-white/20 hover:bg-white/30 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200 border border-white/30"
+                    >
+                      Open in new tab
+                    </a>
+                  </p>
+                  <p className="text-white/70 text-xs mt-2">
+                    Expires in: {result.expires_in} seconds
+                  </p>
+                </div>
               </div>
             )}
           </div>
