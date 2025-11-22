@@ -42,7 +42,6 @@ export default function App() {
               {fileError}
             </p>
           )}
-
         </main>
       </div>
     </div>
