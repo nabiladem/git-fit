@@ -21,3 +21,4 @@ gitfit-compressed-*.jpg
 
 # Logs and databases
 *.log
+coverage
