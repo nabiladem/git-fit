@@ -115,7 +115,7 @@ export default function UploadForm({ file, onFileChange }) {
               file:bg-white/20 file:text-white
               hover:file:bg-white/30
               cursor-pointer
-              bg-white/10 rounded-lg border border-white/20 p-2
+              bg-white/5 rounded-lg border border-white/20 p-2
               focus:outline-none focus:ring-2 focus:ring-white/50"
           />
         </div>
@@ -123,7 +123,7 @@ export default function UploadForm({ file, onFileChange }) {
 
       {/* Image Preview */}
       {preview && (
-        <div className="flex items-center gap-4 p-3 bg-white/10 rounded-lg border border-white/20">
+        <div className="flex items-center gap-4 p-3 bg-white/5 rounded-lg border border-white/20">
           <img
             src={preview}
             alt="preview"
@@ -144,7 +144,7 @@ export default function UploadForm({ file, onFileChange }) {
             type="number"
             value={maxSize}
             onChange={(e) => setMaxSize(Number(e.target.value))}
-            className="mt-2 block w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent"
+            className="mt-2 block w-full bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent"
           />
         </label>
         <label className="block text-sm font-medium text-white/90">
@@ -152,7 +152,7 @@ export default function UploadForm({ file, onFileChange }) {
           <select
             value={format}
             onChange={(e) => setFormat(e.target.value)}
-            className="mt-2 block w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent appearance-none cursor-pointer"
+            className="mt-2 block w-full bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent appearance-none cursor-pointer"
             style={{
               backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='white' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
               backgroundPosition: `right 0.5rem center`,
@@ -182,7 +182,7 @@ export default function UploadForm({ file, onFileChange }) {
             onChange={(e) => setQuality(Number(e.target.value))}
             min={1}
             max={100}
-            className="mt-2 block w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent"
+            className="mt-2 block w-full bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent"
           />
         </label>
         <div />
@@ -215,7 +215,7 @@ export default function UploadForm({ file, onFileChange }) {
 
       {/* Display the compression result */}
       {result && (
-        <div className="p-4 border border-white/30 rounded-xl bg-white/20 backdrop-blur-md shadow-inner text-white">
+        <div className="p-4 border border-white/20 border-t-white/50 border-l-white/50 rounded-xl bg-white/10 backdrop-blur-xl shadow-lg text-white">
           <div className="space-y-2 text-sm">
             <p>
               <strong className="font-semibold">Filename:</strong>{' '}
