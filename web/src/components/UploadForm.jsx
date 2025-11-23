@@ -114,7 +114,7 @@ export default function UploadForm({ file, onFileChange }) {
               file:text-sm file:font-semibold
               file:bg-white/20 file:text-white
               hover:file:bg-white/30
-              cursor-pointer
+              file:cursor-pointer
               bg-white/5 rounded-lg border border-white/20 p-2
               focus:outline-none focus:ring-2 focus:ring-white/50"
           />

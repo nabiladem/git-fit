@@ -38,3 +38,9 @@ body {
     background-position: 0% 50%;
   }
 }
+
+/* Make number input spinners have a pointer cursor */
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  cursor: pointer;
+}
