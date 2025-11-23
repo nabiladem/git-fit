@@ -33,7 +33,6 @@ export default function App() {
           </p>
         </header>
 
-
         <main>
           <UploadForm file={file} onFileChange={handleFileChange} />
 

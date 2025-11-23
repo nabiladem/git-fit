@@ -143,9 +143,10 @@ export default function UploadForm({ file, onFileChange }) {
         </label>
         <div
           className={`relative group border-2 border-dashed rounded-2xl transition-all duration-300 ease-out
-            ${isDragging
-              ? 'border-white bg-white/20 backdrop-blur-md scale-[1.02] shadow-xl'
-              : 'border-white/30 hover:border-white/50 bg-white/10 backdrop-blur-sm hover:bg-white/15'
+            ${
+              isDragging
+                ? 'border-white bg-white/20 backdrop-blur-md scale-[1.02] shadow-xl'
+                : 'border-white/30 hover:border-white/50 bg-white/10 backdrop-blur-sm hover:bg-white/15'
             }
             ${preview ? 'p-0 overflow-hidden' : 'p-10'}
           `}
@@ -247,8 +248,12 @@ export default function UploadForm({ file, onFileChange }) {
               }}
               className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50 appearance-none cursor-pointer w-28 transition-all hover:bg-white/20"
             >
-              <option value="KB" className="bg-gray-800 text-white">KB</option>
-              <option value="MB" className="bg-gray-800 text-white">MB</option>
+              <option value="KB" className="bg-gray-800 text-white">
+                KB
+              </option>
+              <option value="MB" className="bg-gray-800 text-white">
+                MB
+              </option>
             </select>
           </div>
         </label>
