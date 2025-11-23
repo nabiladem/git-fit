@@ -4,12 +4,16 @@ import Spinner from './Spinner'
 // UploadForm() - image upload and compression form component
 export default function UploadForm({ file, onFileChange }) {
   const [preview, setPreview] = useState(null)
+
+  const [sizeValue, setSizeValue] = useState('1')
+  const [sizeUnit, setSizeUnit] = useState('MB')
   const [maxSize, setMaxSize] = useState(1048576) // 1MB
   const [format, setFormat] = useState('jpeg')
   const [quality, setQuality] = useState(85)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [result, setResult] = useState(null)
+  const [isDragging, setIsDragging] = useState(false)
 
   // effect to update the preview when a new file is selected
   useEffect(() => {
@@ -18,10 +22,44 @@ export default function UploadForm({ file, onFileChange }) {
       return
     }
 
+    // create a URL for the file
     const url = URL.createObjectURL(file)
     setPreview(url)
     return () => URL.revokeObjectURL(url)
   }, [file])
+
+  // update maxSize when sizeValue or sizeUnit changes
+  useEffect(() => {
+    const multiplier = sizeUnit === 'MB' ? 1024 * 1024 : 1024
+    const val = parseFloat(sizeValue) || 0
+    setMaxSize(val * multiplier)
+  }, [sizeValue, sizeUnit])
+
+  // handle drag and drop events
+  const handleDragOver = (e) => {
+    e.preventDefault()
+    setIsDragging(true)
+  }
+
+  const handleDragLeave = (e) => {
+    e.preventDefault()
+    setIsDragging(false)
+  }
+
+  const handleDrop = (e) => {
+    e.preventDefault()
+    setIsDragging(false)
+
+    // handle dropped file
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const syntheticEvent = {
+        target: {
+          files: e.dataTransfer.files,
+        },
+      }
+      onFileChange(syntheticEvent)
+    }
+  }
 
   // onSubmit() - handles form submission
   async function onSubmit(e) {
@@ -103,59 +141,131 @@ export default function UploadForm({ file, onFileChange }) {
         <label className="block text-sm font-medium text-white/90 mb-2">
           Image
         </label>
-        <div className="relative group">
+        <div
+          className={`relative group border-2 border-dashed rounded-2xl transition-all duration-300 ease-out
+            ${
+              isDragging
+                ? 'border-white bg-white/20 backdrop-blur-md scale-[1.02] shadow-xl'
+                : 'border-white/30 hover:border-white/50 bg-white/10 backdrop-blur-sm hover:bg-white/15'
+            }
+            ${preview ? 'p-0 overflow-hidden' : 'p-10'}
+          `}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
           <input
             type="file"
             accept="image/*"
             onChange={onFileChange}
-            className="block w-full text-sm text-white/80
-              file:mr-4 file:py-2 file:px-4
-              file:rounded-full file:border-0
-              file:text-sm file:font-semibold
-              file:bg-white/20 file:text-white
-              hover:file:bg-white/30
-              cursor-pointer
-              bg-white/10 rounded-lg border border-white/20 p-2
-              focus:outline-none focus:ring-2 focus:ring-white/50"
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
           />
+
+          {preview ? (
+            <div className="relative w-full h-64 bg-black/20 group-hover:bg-black/30 transition-colors">
+              <img
+                src={preview}
+                alt="preview"
+                className="w-full h-full object-contain"
+              />
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-sm">
+                <p className="text-white font-medium">
+                  Click or drop to replace
+                </p>
+              </div>
+              <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent text-white text-sm truncate">
+                {file && file.name}
+              </div>
+            </div>
+          ) : (
+            <div className="text-center space-y-4 pointer-events-none">
+              <div className="w-16 h-16 mx-auto bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <svg
+                  className="w-8 h-8 text-white/80"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                  />
+                </svg>
+              </div>
+              <div>
+                <p className="text-lg font-medium text-white">
+                  {isDragging
+                    ? 'Drop image here'
+                    : 'Click to upload or drag and drop'}
+                </p>
+                <p className="text-sm text-white/60 mt-1">
+                  SVG, PNG, JPG or GIF (max 5MB)
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
-
-      {/* Image Preview */}
-      {preview && (
-        <div className="flex items-center gap-4 p-3 bg-white/10 rounded-lg border border-white/20">
-          <img
-            src={preview}
-            alt="preview"
-            className="w-20 h-20 object-cover rounded-md border border-white/30"
-          />
-          <div className="text-sm text-white/90">
-            <p className="font-semibold">Selected:</p>
-            <p className="truncate max-w-[200px]">{file && file.name}</p>
-          </div>
-        </div>
-      )}
 
       {/* Form Controls */}
       <div className="grid grid-cols-2 gap-6">
         <label className="block text-sm font-medium text-white/90">
-          Max size (bytes)
-          <input
-            type="number"
-            value={maxSize}
-            onChange={(e) => setMaxSize(Number(e.target.value))}
-            className="mt-2 block w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent"
-          />
+          Max size
+          <div className="flex gap-2 mt-2">
+            <input
+              type="number"
+              value={sizeValue}
+              onChange={(e) => setSizeValue(e.target.value)}
+              onBlur={() => {
+                let val = parseFloat(sizeValue)
+                const limit = sizeUnit === 'MB' ? 1 : 1024
+
+                if (isNaN(val)) val = limit // Default to limit if invalid
+
+                // Clamp value
+                if (val > limit) val = limit
+                if (val < 0.1) val = 0.1
+
+                setSizeValue(String(val))
+              }}
+              min="0.1"
+              max={sizeUnit === 'MB' ? 1 : 1024}
+              step={sizeUnit === 'MB' ? 0.1 : 1}
+              className="block w-full bg-white/10 backdrop-blur-md border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50 transition-all hover:bg-white/20"
+            />
+            <select
+              value={sizeUnit}
+              onChange={(e) => {
+                const newUnit = e.target.value
+                setSizeUnit(newUnit)
+                // Adjust value if it exceeds new limit
+                const val = parseFloat(sizeValue)
+                if (newUnit === 'MB' && val > 1) {
+                  setSizeValue('1')
+                }
+              }}
+              className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50 appearance-none cursor-pointer w-28 transition-all hover:bg-white/20"
+            >
+              <option value="KB" className="bg-gray-800 text-white">
+                KB
+              </option>
+              <option value="MB" className="bg-gray-800 text-white">
+                MB
+              </option>
+            </select>
+          </div>
         </label>
         <label className="block text-sm font-medium text-white/90">
           Format
           <select
             value={format}
             onChange={(e) => setFormat(e.target.value)}
-            className="mt-2 block w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent appearance-none cursor-pointer"
+            className="mt-2 block w-full bg-white/10 backdrop-blur-md border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50 appearance-none cursor-pointer transition-all hover:bg-white/20"
             style={{
               backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='white' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-              backgroundPosition: `right 0.5rem center`,
+              backgroundPosition: `right 1rem center`,
               backgroundRepeat: `no-repeat`,
               backgroundSize: `1.5em 1.5em`,
             }}
@@ -175,14 +285,14 @@ export default function UploadForm({ file, onFileChange }) {
 
       <div className="grid grid-cols-2 gap-6">
         <label className="block text-sm font-medium text-white/90">
-          Quality
+          Quality: {quality}%
           <input
-            type="number"
+            type="range"
             value={quality}
             onChange={(e) => setQuality(Number(e.target.value))}
             min={1}
             max={100}
-            className="mt-2 block w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent"
+            className="mt-2 block w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer accent-white hover:bg-white/30 transition-colors"
           />
         </label>
         <div />
@@ -193,7 +303,7 @@ export default function UploadForm({ file, onFileChange }) {
         <button
           type="submit"
           disabled={loading}
-          className="w-full inline-flex justify-center items-center gap-2 px-6 py-3 bg-white/20 hover:bg-white/30 text-white font-bold rounded-xl transition-all duration-200 border border-white/30 shadow-lg hover:shadow-xl active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full inline-flex justify-center items-center gap-2 px-6 py-4 bg-white/20 hover:bg-white/30 text-white font-bold rounded-2xl transition-all duration-300 border border-white/30 shadow-lg hover:shadow-2xl hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed backdrop-blur-md"
         >
           {loading ? (
             <>
@@ -215,8 +325,8 @@ export default function UploadForm({ file, onFileChange }) {
 
       {/* Display the compression result */}
       {result && (
-        <div className="p-4 border border-white/30 rounded-xl bg-white/20 backdrop-blur-md shadow-inner text-white">
-          <div className="space-y-2 text-sm">
+        <div className="p-6 border border-white/30 border-t-white/60 border-l-white/60 rounded-2xl bg-white/20 backdrop-blur-2xl shadow-xl text-white animate-fade-in">
+          <div className="space-y-3 text-sm">
             <p>
               <strong className="font-semibold">Filename:</strong>{' '}
               {result.filename}
