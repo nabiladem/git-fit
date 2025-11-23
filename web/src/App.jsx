@@ -22,7 +22,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6">
-      <div className="w-full max-w-3xl bg-white/10 backdrop-blur-2xl rounded-2xl shadow-2xl border border-white/20 border-t-white/50 border-l-white/50 p-8">
+      <div className="w-full max-w-3xl bg-white/20 backdrop-blur-3xl rounded-3xl shadow-2xl border border-white/30 border-t-white/60 border-l-white/60 p-10">
         <header className="mb-8 text-center">
           <h1 className="text-4xl font-bold text-white drop-shadow-md mb-2">
             git fit
