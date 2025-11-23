@@ -10,6 +10,7 @@ export default function UploadForm({ file, onFileChange }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [result, setResult] = useState(null)
+  const [isDragging, setIsDragging] = useState(false)
 
   // effect to update the preview when a new file is selected
   useEffect(() => {
@@ -22,6 +23,30 @@ export default function UploadForm({ file, onFileChange }) {
     setPreview(url)
     return () => URL.revokeObjectURL(url)
   }, [file])
+
+  const handleDragOver = (e) => {
+    e.preventDefault()
+    setIsDragging(true)
+  }
+
+  const handleDragLeave = (e) => {
+    e.preventDefault()
+    setIsDragging(false)
+  }
+
+  const handleDrop = (e) => {
+    e.preventDefault()
+    setIsDragging(false)
+
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const syntheticEvent = {
+        target: {
+          files: e.dataTransfer.files
+        }
+      }
+      onFileChange(syntheticEvent)
+    }
+  }
 
   // onSubmit() - handles form submission
   async function onSubmit(e) {
@@ -103,38 +128,58 @@ export default function UploadForm({ file, onFileChange }) {
         <label className="block text-sm font-medium text-white/90 mb-2">
           Image
         </label>
-        <div className="relative group">
+        <div
+          className={`relative group border-2 border-dashed rounded-xl transition-all duration-200 ease-in-out
+            ${isDragging
+              ? 'border-white bg-white/10 scale-[1.02]'
+              : 'border-white/20 hover:border-white/40 bg-white/5'
+            }
+            ${preview ? 'p-0 overflow-hidden' : 'p-8'}
+          `}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
           <input
             type="file"
             accept="image/*"
             onChange={onFileChange}
-            className="block w-full text-sm text-white/80
-              file:mr-4 file:py-2 file:px-4
-              file:rounded-full file:border-0
-              file:text-sm file:font-semibold
-              file:bg-white/20 file:text-white
-              hover:file:bg-white/30
-              file:cursor-pointer
-              bg-white/5 rounded-lg border border-white/20 p-2
-              focus:outline-none focus:ring-2 focus:ring-white/50"
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
           />
+
+          {preview ? (
+            <div className="relative w-full h-64 bg-black/20 group-hover:bg-black/30 transition-colors">
+              <img
+                src={preview}
+                alt="preview"
+                className="w-full h-full object-contain"
+              />
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-sm">
+                <p className="text-white font-medium">Click or drop to replace</p>
+              </div>
+              <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent text-white text-sm truncate">
+                {file && file.name}
+              </div>
+            </div>
+          ) : (
+            <div className="text-center space-y-4 pointer-events-none">
+              <div className="w-16 h-16 mx-auto bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-lg font-medium text-white">
+                  {isDragging ? 'Drop image here' : 'Click to upload or drag and drop'}
+                </p>
+                <p className="text-sm text-white/60 mt-1">
+                  SVG, PNG, JPG or GIF (max 5MB)
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
-
-      {/* Image Preview */}
-      {preview && (
-        <div className="flex items-center gap-4 p-3 bg-white/5 rounded-lg border border-white/20">
-          <img
-            src={preview}
-            alt="preview"
-            className="w-20 h-20 object-cover rounded-md border border-white/30"
-          />
-          <div className="text-sm text-white/90">
-            <p className="font-semibold">Selected:</p>
-            <p className="truncate max-w-[200px]">{file && file.name}</p>
-          </div>
-        </div>
-      )}
 
       {/* Form Controls */}
       <div className="grid grid-cols-2 gap-6">
