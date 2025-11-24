@@ -3,143 +3,138 @@ import React, { useState, useRef, useEffect } from 'react'
 // ComparisonSlider() - comparison slider component
 /* before (string): path to before image; after (string): path to after image; labelBefore (string): label for before image; labelAfter (string): label for after image */
 export default function ComparisonSlider({
-  before,
-  after,
-  labelBefore = 'Before',
-  labelAfter = 'After',
+    before,
+    after,
+    labelBefore = 'Before',
+    labelAfter = 'After',
 }) {
-  const [sliderPosition, setSliderPosition] = useState(50)
-  const [isDragging, setIsDragging] = useState(false)
-  const [containerWidth, setContainerWidth] = useState(0)
-  const containerRef = useRef(null)
+    const [sliderPosition, setSliderPosition] = useState(50)
+    const [isDragging, setIsDragging] = useState(false)
+    const [containerWidth, setContainerWidth] = useState(0)
+    const containerRef = useRef(null)
 
-  // handle container width
-  useEffect(() => {
-    if (containerRef.current) {
-      setContainerWidth(containerRef.current.offsetWidth)
+    // handle container width
+    useEffect(() => {
+        if (containerRef.current) {
+            setContainerWidth(containerRef.current.offsetWidth)
+        }
+
+        const handleResize = () => {
+            if (containerRef.current) {
+                setContainerWidth(containerRef.current.offsetWidth)
+            }
+        }
+
+        window.addEventListener('resize', handleResize)
+
+        return () => window.removeEventListener('resize', handleResize)
+    }, [])
+
+    // handle slider movement
+    const handleMove = (event) => {
+        if (!containerRef.current) return
+
+        const containerRect = containerRef.current.getBoundingClientRect()
+        const x = (event.clientX || event.touches[0].clientX) - containerRect.left
+        const position = (x / containerRect.width) * 100
+
+        setSliderPosition(Math.min(100, Math.max(0, position)))
     }
 
-    // handle window resize
-    const handleResize = () => {
-      if (containerRef.current) {
-        setContainerWidth(containerRef.current.offsetWidth)
-      }
-    }
+    useEffect(() => {
+        const handleWindowMove = (e) => {
+            if (isDragging) handleMove(e)
+        }
 
-    window.addEventListener('resize', handleResize)
+        const handleWindowUp = () => setIsDragging(false)
 
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
+        window.addEventListener('mousemove', handleWindowMove)
+        window.addEventListener('mouseup', handleWindowUp)
+        window.addEventListener('touchmove', handleWindowMove)
+        window.addEventListener('touchend', handleWindowUp)
 
-  // handle slider movement
-  const handleMove = (event) => {
-    if (!containerRef.current) return
+        return () => {
+            window.removeEventListener('mousemove', handleWindowMove)
+            window.removeEventListener('mouseup', handleWindowUp)
+            window.removeEventListener('touchmove', handleWindowMove)
+            window.removeEventListener('touchend', handleWindowUp)
+        }
+    }, [isDragging])
 
-    const containerRect = containerRef.current.getBoundingClientRect()
-    const x = (event.clientX || event.touches[0].clientX) - containerRect.left
-    const position = (x / containerRect.width) * 100
-
-    setSliderPosition(Math.min(100, Math.max(0, position)))
-  }
-
-  // handle slider drag
-  const handleMouseDown = () => setIsDragging(true)
-  const handleMouseUp = () => setIsDragging(false)
-
-  useEffect(() => {
-    const handleWindowMove = (e) => {
-      if (isDragging) handleMove(e)
-    }
-
-    const handleWindowUp = () => setIsDragging(false)
-
-    window.addEventListener('mousemove', handleWindowMove)
-    window.addEventListener('mouseup', handleWindowUp)
-    window.addEventListener('touchmove', handleWindowMove)
-    window.addEventListener('touchend', handleWindowUp)
-
-    return () => {
-      window.removeEventListener('mousemove', handleWindowMove)
-      window.removeEventListener('mouseup', handleWindowUp)
-      window.removeEventListener('touchmove', handleWindowMove)
-      window.removeEventListener('touchend', handleWindowUp)
-    }
-  }, [isDragging])
-
-  return (
-    <div
-      ref={containerRef}
-      className="relative w-full h-[400px] rounded-2xl overflow-hidden cursor-ew-resize select-none shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] border border-white/20 bg-white/10 backdrop-blur-xl backdrop-saturate-150"
-      onMouseDown={(e) => {
-        setIsDragging(true)
-        handleMove(e)
-      }}
-      onTouchStart={(e) => {
-        setIsDragging(true)
-        handleMove(e)
-      }}
-    >
-      {/* After Image (Background) */}
-      <img
-        src={after}
-        alt="After"
-        className="absolute inset-0 w-full h-full object-cover"
-      />
-      <div className="absolute top-4 right-4 bg-black/40 backdrop-blur-md border border-white/10 text-white px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap shadow-lg">
-        {labelAfter}
-      </div>
-
-      {/* Before Image (Foreground - Clipped) */}
-      <div
-        className="absolute inset-0 w-full h-full overflow-hidden"
-        style={{ width: `${sliderPosition}%` }}
-      >
-        <img
-          src={before}
-          alt="Before"
-          className="absolute inset-0 w-full h-full object-cover max-w-none"
-          style={{ width: containerWidth || '100%' }}
-        />
-        <div className="absolute top-4 left-4 bg-black/40 backdrop-blur-md border border-white/10 text-white px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap shadow-lg">
-          {labelBefore}
-        </div>
-      </div>
-
-      {/* Slider Handle */}
-      <div
-        className="absolute top-0 bottom-0 w-1.5 cursor-ew-resize z-30"
-        style={{ left: `${sliderPosition}%` }}
-      >
-        {/* The "Rod" - Refracting Light */}
-        <div className="absolute inset-0 bg-white/20 backdrop-blur-md backdrop-saturate-200 backdrop-contrast-125 border-x border-white/40 shadow-[0_0_15px_rgba(255,255,255,0.3)]"></div>
-
-        {/* The "Shine" - Reflecting Light */}
-        <div className="absolute inset-0 bg-gradient-to-b from-white/80 via-transparent to-white/80 opacity-50 mix-blend-overlay"></div>
-
-        {/* The "Knob" - Liquid Drop */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 rounded-full flex items-center justify-center group hover:scale-110 transition-transform duration-300">
-          {/* Knob Background (Adaptive) */}
-          <div className="absolute inset-0 rounded-full bg-transparent backdrop-blur-[2px] backdrop-brightness-105 shadow-[inset_0_0_10px_rgba(255,255,255,0.1),0_5px_15px_rgba(0,0,0,0.1)] border border-white/20"></div>
-
-          {/* Knob Reflection (Gloss) */}
-          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/30 to-transparent opacity-30 mix-blend-overlay"></div>
-
-          <svg
-            className="relative w-6 h-6 text-white/80 drop-shadow-sm"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2.5}
-              d="M8 9l4-4 4 4m0 6l-4 4-4-4"
-              transform="rotate(90 12 12)"
+    return (
+        <div
+            ref={containerRef}
+            className="relative w-full h-[400px] rounded-2xl overflow-hidden cursor-ew-resize select-none shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] border border-white/20 bg-white/10 backdrop-blur-xl backdrop-saturate-150"
+            onMouseDown={(e) => {
+                setIsDragging(true)
+                handleMove(e)
+            }}
+            onTouchStart={(e) => {
+                setIsDragging(true)
+                handleMove(e)
+            }}
+        >
+            {/* After Image (Background) */}
+            <img
+                src={after}
+                alt="After"
+                className="absolute inset-0 w-full h-full object-cover"
             />
-          </svg>
+            <div className="absolute top-4 right-4 bg-black/40 backdrop-blur-md border border-white/10 text-white px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap shadow-lg">
+                {labelAfter}
+            </div>
+
+            {/* Before Image (Foreground - Clipped) */}
+            <div
+                className="absolute inset-0 w-full h-full overflow-hidden"
+                style={{ width: `${sliderPosition}%` }}
+            >
+                <img
+                    src={before}
+                    alt="Before"
+                    className="absolute inset-0 w-full h-full object-cover max-w-none"
+                    style={{ width: containerWidth || '100%' }}
+                />
+                <div className="absolute top-4 left-4 bg-black/40 backdrop-blur-md border border-white/10 text-white px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap shadow-lg">
+                    {labelBefore}
+                </div>
+            </div>
+
+            {/* Slider Handle */}
+            <div
+                className="absolute top-0 bottom-0 w-1.5 cursor-ew-resize z-30"
+                style={{ left: `${sliderPosition}%` }}
+            >
+                {/* The "Rod" - Refracting Light */}
+                <div className="absolute inset-0 bg-white/20 backdrop-blur-md backdrop-saturate-200 backdrop-contrast-125 border-x border-white/40 shadow-[0_0_15px_rgba(255,255,255,0.3)]"></div>
+
+                {/* The "Shine" - Reflecting Light */}
+                <div className="absolute inset-0 bg-gradient-to-b from-white/80 via-transparent to-white/80 opacity-50 mix-blend-overlay"></div>
+
+                {/* The "Knob" - Liquid Drop */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 rounded-full flex items-center justify-center group hover:scale-110 transition-transform duration-300">
+                    {/* Knob Background (Adaptive) */}
+                    <div className="absolute inset-0 rounded-full bg-transparent backdrop-blur-[2px] backdrop-brightness-105 shadow-[inset_0_0_10px_rgba(255,255,255,0.1),0_5px_15px_rgba(0,0,0,0.1)] border border-white/20"></div>
+
+                    {/* Knob Reflection (Gloss) */}
+                    <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/30 to-transparent opacity-30 mix-blend-overlay"></div>
+
+                    <svg
+                        className="relative w-6 h-6 text-white/80 drop-shadow-sm"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                    >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2.5}
+                            d="M8 9l4-4 4 4m0 6l-4 4-4-4"
+                            transform="rotate(90 12 12)"
+                        />
+                    </svg>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-  )
+    )
 }

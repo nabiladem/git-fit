@@ -39,6 +39,9 @@ export default [
         FileReader: 'readonly',
         URL: 'readonly',
         Blob: 'readonly',
+        localStorage: 'readonly',
+        navigator: 'readonly',
+        setTimeout: 'readonly',
       },
     },
     settings: {
