@@ -37,34 +37,37 @@ export default function UploadForm({ file, onFileChange }) {
   const [result, setResult] = useState(null)
   const [isDragging, setIsDragging] = useState(false)
   const [comparisonData, setComparisonData] = useState(null)
+  const [copied, setCopied] = useState(false)
 
   // fetch NASA APOD
   useEffect(() => {
     fetch('https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY')
-      .then(res => res.json())
-      .then(data => {
+      .then((res) => res.json())
+      .then((data) => {
         if (data.url) {
           setComparisonData({
             before: data.url,
             after: data.url,
             isDemo: true,
             beforeLabel: 'Original (3.2 MB)',
-            afterLabel: 'Compressed (1 MB)'
+            afterLabel: 'Compressed (1 MB)',
           })
         } else {
           throw new Error('No URL in response')
         }
       })
-      .catch(err => {
+      .catch((err) => {
         console.error('Failed to fetch NASA APOD:', err)
 
         // fallback image
         setComparisonData({
-          before: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop',
-          after: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop',
+          before:
+            'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop',
+          after:
+            'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop',
           isDemo: true,
           beforeLabel: 'Original (3.2 MB)',
-          afterLabel: 'Compressed (1 MB)'
+          afterLabel: 'Compressed (1 MB)',
         })
       })
   }, [])
@@ -159,7 +162,7 @@ export default function UploadForm({ file, onFileChange }) {
             after: data.download_url,
             beforeLabel: `Original (${formatBytes(file.size)})`,
             afterLabel: `Compressed (${formatBytes(data.size)})`,
-            isDemo: false
+            isDemo: false,
           })
         }
       }
@@ -201,6 +204,19 @@ export default function UploadForm({ file, onFileChange }) {
       })
   }
 
+  // copyToClipboard() - copy link to clipboard
+  const copyToClipboard = async () => {
+    if (!result?.download_url) return
+
+    try {
+      await navigator.clipboard.writeText(result.download_url)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch (err) {
+      console.error('Failed to copy:', err)
+    }
+  }
+
   return (
     <form onSubmit={onSubmit} className="space-y-6">
       <div>
@@ -209,9 +225,10 @@ export default function UploadForm({ file, onFileChange }) {
         </label>
         <div
           className={`relative group border-2 border-dashed rounded-2xl transition-all duration-300 ease-out
-            ${isDragging
-              ? 'border-white bg-white/10 backdrop-blur-xl scale-[1.02] shadow-xl'
-              : 'border-white/20 hover:border-white/40 bg-white/5 backdrop-blur-md hover:bg-white/10'
+            ${
+              isDragging
+                ? 'border-white bg-white/10 backdrop-blur-xl scale-[1.02] shadow-xl'
+                : 'border-white/20 hover:border-white/40 bg-white/5 backdrop-blur-md hover:bg-white/10'
             }
             ${preview ? 'p-0 overflow-hidden' : 'p-10'}
           `}
@@ -345,20 +362,22 @@ export default function UploadForm({ file, onFileChange }) {
         </label>
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
-        <label className="block text-sm font-medium text-white/90">
-          Quality: {quality}%
-          <input
-            type="range"
-            value={quality}
-            onChange={(e) => setQuality(Number(e.target.value))}
-            min={1}
-            max={100}
-            className="mt-2 block w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer accent-white hover:bg-white/30 transition-colors"
-          />
-        </label>
-        <div />
-      </div>
+      {format === 'jpeg' && (
+        <div className="grid grid-cols-2 gap-6">
+          <label className="block text-sm font-medium text-white/90">
+            Quality: {quality}%
+            <input
+              type="range"
+              value={quality}
+              onChange={(e) => setQuality(Number(e.target.value))}
+              min={1}
+              max={100}
+              className="mt-2 block w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer accent-white hover:bg-white/30 transition-colors"
+            />
+          </label>
+          <div />
+        </div>
+      )}
 
       {/* Submit Button */}
       <div>
@@ -388,12 +407,17 @@ export default function UploadForm({ file, onFileChange }) {
       {/* Comparison Slider */}
       {comparisonData && (
         <div className="space-y-4 animate-fade-in">
-
           <ComparisonSlider
             before={comparisonData.before}
             after={comparisonData.after}
-            labelBefore={comparisonData.beforeLabel || (comparisonData.isDemo ? "Original" : "Original")}
-            labelAfter={comparisonData.afterLabel || (comparisonData.isDemo ? "Compressed (Simulated)" : "Compressed")}
+            labelBefore={
+              comparisonData.beforeLabel ||
+              (comparisonData.isDemo ? 'Original' : 'Original')
+            }
+            labelAfter={
+              comparisonData.afterLabel ||
+              (comparisonData.isDemo ? 'Compressed (Simulated)' : 'Compressed')
+            }
           />
         </div>
       )}
@@ -417,20 +441,66 @@ export default function UploadForm({ file, onFileChange }) {
           {result.download_url && (
             <div className="mt-4 flex items-center gap-4">
               <button
-                onClick={onDownload}
-                className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg border border-white/30 transition-colors"
                 type="button"
+                onClick={onDownload}
+                className="flex-1 bg-white/10 text-white py-3 px-6 rounded-xl font-bold border border-white/20 hover:bg-white/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 backdrop-blur-md shadow-lg"
               >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                  />
+                </svg>
                 Download
               </button>
-              <a
-                href={result.download_url}
-                className="text-white/80 hover:text-white underline text-sm"
-                target="_blank"
-                rel="noreferrer"
+              <button
+                type="button"
+                onClick={copyToClipboard}
+                className="bg-white/10 text-white py-3 px-6 rounded-xl font-bold border border-white/20 hover:bg-white/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 backdrop-blur-md shadow-lg"
               >
-                Open in new tab
-              </a>
+                {copied ? (
+                  <>
+                    <svg
+                      className="w-5 h-5 text-green-400"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                      />
+                    </svg>
+                    Copy Link
+                  </>
+                )}
+              </button>
             </div>
           )}
         </div>
