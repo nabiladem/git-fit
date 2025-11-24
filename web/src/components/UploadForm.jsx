@@ -218,17 +218,16 @@ export default function UploadForm({ file, onFileChange }) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-6">
+    <form onSubmit={onSubmit} className="space-y-6 animate-slide-up">
       <div>
         <label className="block text-sm font-medium text-white/90 mb-2">
           Image
         </label>
         <div
-          className={`relative group border-2 border-dashed rounded-2xl transition-all duration-300 ease-out
-            ${
-              isDragging
-                ? 'border-white bg-white/10 backdrop-blur-xl scale-[1.02] shadow-xl'
-                : 'border-white/20 hover:border-white/40 bg-white/5 backdrop-blur-md hover:bg-white/10'
+          className={`relative group border-2 border-dashed rounded-2xl transition-all duration-500 ease-out
+            ${isDragging
+              ? 'border-white bg-white/10 backdrop-blur-xl scale-[1.02] shadow-xl'
+              : 'border-white/20 hover:border-white/40 bg-white/5 backdrop-blur-md hover:bg-white/10'
             }
             ${preview ? 'p-0 overflow-hidden' : 'p-10'}
           `}
@@ -244,13 +243,13 @@ export default function UploadForm({ file, onFileChange }) {
           />
 
           {preview ? (
-            <div className="relative w-full h-64 bg-black/20 group-hover:bg-black/30 transition-colors">
+            <div className="relative w-full h-64 bg-black/20 group-hover:bg-black/30 transition-all duration-300">
               <img
                 src={preview}
                 alt="preview"
                 className="w-full h-full object-contain"
               />
-              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-sm">
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/40 backdrop-blur-sm">
                 <p className="text-white font-medium">
                   Click or drop to replace
                 </p>
@@ -312,7 +311,7 @@ export default function UploadForm({ file, onFileChange }) {
 
                 setSizeValue(String(val))
               }}
-              className="block w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 transition-all hover:bg-white/10"
+              className="block w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 transition-all duration-200 hover:bg-white/10"
             />
             <select
               value={sizeUnit}
@@ -325,7 +324,7 @@ export default function UploadForm({ file, onFileChange }) {
                   setSizeValue('1')
                 }
               }}
-              className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 appearance-none cursor-pointer w-28 transition-all hover:bg-white/10"
+              className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 appearance-none cursor-pointer w-28 transition-all duration-200 hover:bg-white/10"
             >
               <option value="KB" className="bg-gray-800 text-white">
                 KB
@@ -341,7 +340,7 @@ export default function UploadForm({ file, onFileChange }) {
           <select
             value={format}
             onChange={(e) => setFormat(e.target.value)}
-            className="mt-2 block w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 appearance-none cursor-pointer transition-all hover:bg-white/10"
+            className="mt-2 block w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 appearance-none cursor-pointer transition-all duration-200 hover:bg-white/10"
             style={{
               backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='white' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
               backgroundPosition: `right 1rem center`,
@@ -372,7 +371,7 @@ export default function UploadForm({ file, onFileChange }) {
               onChange={(e) => setQuality(Number(e.target.value))}
               min={1}
               max={100}
-              className="mt-2 block w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer accent-white hover:bg-white/30 transition-colors"
+              className="mt-2 block w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer accent-white hover:bg-white/30 transition-all duration-200"
             />
           </label>
           <div />
@@ -424,7 +423,7 @@ export default function UploadForm({ file, onFileChange }) {
 
       {/* Display the compression result */}
       {result && (
-        <div className="p-6 border border-white/20 border-t-white/40 border-l-white/40 rounded-2xl bg-white/10 backdrop-blur-xl shadow-xl text-white animate-fade-in">
+        <div className="p-6 border border-white/20 border-t-white/40 border-l-white/40 rounded-2xl bg-white/10 backdrop-blur-xl shadow-xl text-white animate-scale-in">
           <div className="space-y-3 text-sm">
             <p>
               <strong className="font-semibold">Filename:</strong>{' '}
