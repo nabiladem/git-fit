@@ -44,7 +44,6 @@ input[type='number']::-webkit-outer-spin-button {
   cursor: pointer;
 }
 
-/* Custom smooth animations */
 @keyframes fadeIn {
   from {
     opacity: 0;

@@ -38,28 +38,63 @@ export default function UploadForm({ file, onFileChange }) {
   const [isDragging, setIsDragging] = useState(false)
   const [comparisonData, setComparisonData] = useState(null)
   const [copied, setCopied] = useState(false)
+  const fileInputRef = React.useRef(null)
 
-  // fetch NASA APOD
+  // fetch NASA APOD with caching
   useEffect(() => {
-    fetch('https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.url) {
-          setComparisonData({
-            before: data.url,
-            after: data.url,
-            isDemo: true,
-            beforeLabel: 'Original (3.2 MB)',
-            afterLabel: 'Compressed (1 MB)',
-          })
-        } else {
-          throw new Error('No URL in response')
+    const fetchAPOD = async () => {
+      try {
+        // check cache first
+        const today = new Date().toISOString().split('T')[0]
+        const cachedData = localStorage.getItem('apod_cache')
+        const cachedDate = localStorage.getItem('apod_date')
+
+        if (cachedData && cachedDate === today) {
+          console.log('Using cached APOD')
+          setComparisonData(JSON.parse(cachedData))
+          return
         }
-      })
-      .catch((err) => {
+
+        const apiKey = 'NASA_API_KEY'
+        const response = await fetch(
+          `https://api.nasa.gov/planetary/apod?api_key=${apiKey}`
+        )
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+
+        const data = await response.json()
+
+        if (data.media_type !== 'image' || !data.url) {
+          throw new Error('APOD is not an image today')
+        }
+
+        const apodData = {
+          before: data.url,
+          after: data.url,
+          isDemo: true,
+          beforeLabel: 'Original (3.2 MB)',
+          afterLabel: 'Compressed (1 MB)',
+        }
+
+        setComparisonData(apodData)
+
+        // cache for today
+        localStorage.setItem('apod_cache', JSON.stringify(apodData))
+        localStorage.setItem('apod_date', today)
+
+        console.log('Loaded fresh APOD:', data.title)
+      } catch (err) {
         console.error('Failed to fetch NASA APOD:', err)
 
-        // fallback image
+        const cachedData = localStorage.getItem('apod_cache')
+        if (cachedData) {
+          console.log('Using previous APOD from cache')
+          setComparisonData(JSON.parse(cachedData))
+          return
+        }
+
         setComparisonData({
           before:
             'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop',
@@ -69,7 +104,10 @@ export default function UploadForm({ file, onFileChange }) {
           beforeLabel: 'Original (3.2 MB)',
           afterLabel: 'Compressed (1 MB)',
         })
-      })
+      }
+    }
+
+    fetchAPOD()
   }, [])
 
   // update preview when file changes
@@ -225,9 +263,10 @@ export default function UploadForm({ file, onFileChange }) {
         </label>
         <div
           className={`relative group border-2 border-dashed rounded-2xl transition-all duration-500 ease-out
-            ${isDragging
-              ? 'border-white bg-white/10 backdrop-blur-xl scale-[1.02] shadow-xl'
-              : 'border-white/20 hover:border-white/40 bg-white/5 backdrop-blur-md hover:bg-white/10'
+            ${
+              isDragging
+                ? 'border-white bg-white/10 backdrop-blur-xl scale-[1.02] shadow-xl'
+                : 'border-white/20 hover:border-white/40 bg-white/5 backdrop-blur-md hover:bg-white/10'
             }
             ${preview ? 'p-0 overflow-hidden' : 'p-10'}
           `}
@@ -236,6 +275,7 @@ export default function UploadForm({ file, onFileChange }) {
           onDrop={handleDrop}
         >
           <input
+            ref={fileInputRef}
             type="file"
             accept="image/*"
             onChange={onFileChange}
@@ -249,6 +289,32 @@ export default function UploadForm({ file, onFileChange }) {
                 alt="preview"
                 className="w-full h-full object-contain"
               />
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  if (fileInputRef.current) {
+                    fileInputRef.current.value = ''
+                  }
+                  onFileChange({ target: { files: [] } })
+                }}
+                className="absolute top-2 right-2 z-20 w-6 h-6 flex items-center justify-center rounded-full bg-black/50 hover:bg-black/70 border border-white/20 backdrop-blur-sm transition-all duration-200"
+                aria-label="Remove image"
+              >
+                <svg
+                  className="w-3.5 h-3.5 text-white"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
               <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/40 backdrop-blur-sm">
                 <p className="text-white font-medium">
                   Click or drop to replace

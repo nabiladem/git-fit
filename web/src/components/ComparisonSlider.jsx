@@ -1,8 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 
 // ComparisonSlider() - comparison slider component
-/* before (string): path to before image; after (string): path to after image; 
-labelBefore (string): label for before image; labelAfter (string): label for after image */
+/* before (string): path to before image; after (string): path to after image; labelBefore (string): label for before image; labelAfter (string): label for after image */
 export default function ComparisonSlider({
   before,
   after,
