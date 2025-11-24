@@ -1,8 +1,30 @@
 import React, { useState, useEffect } from 'react'
 import Spinner from './Spinner'
+import ComparisonSlider from './ComparisonSlider'
 
 // UploadForm() - image upload and compression form component
 export default function UploadForm({ file, onFileChange }) {
+  // formatBytes() - formats bytes to appropriate unit
+  const formatBytes = (bytes, decimals = 2, forceUnit = null) => {
+    if (!+bytes) return '0 Bytes'
+
+    const k = 1024
+    const dm = decimals < 0 ? 0 : decimals
+    const sizes = ['Bytes', 'KB', 'MB', 'GB']
+
+    if (forceUnit && sizes.includes(forceUnit)) {
+      const i = sizes.indexOf(forceUnit)
+      return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
+    }
+
+    if (bytes >= 1000000) {
+      return `${(bytes / (1024 * 1024)).toFixed(decimals)} MB`
+    }
+
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
+  }
+
   const [preview, setPreview] = useState(null)
 
   const [sizeValue, setSizeValue] = useState('1')
@@ -14,8 +36,40 @@ export default function UploadForm({ file, onFileChange }) {
   const [error, setError] = useState(null)
   const [result, setResult] = useState(null)
   const [isDragging, setIsDragging] = useState(false)
+  const [comparisonData, setComparisonData] = useState(null)
 
-  // effect to update the preview when a new file is selected
+  // fetch NASA APOD
+  useEffect(() => {
+    fetch('https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY')
+      .then(res => res.json())
+      .then(data => {
+        if (data.url) {
+          setComparisonData({
+            before: data.url,
+            after: data.url,
+            isDemo: true,
+            beforeLabel: 'Original (3.2 MB)',
+            afterLabel: 'Compressed (1 MB)'
+          })
+        } else {
+          throw new Error('No URL in response')
+        }
+      })
+      .catch(err => {
+        console.error('Failed to fetch NASA APOD:', err)
+
+        // fallback image
+        setComparisonData({
+          before: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop',
+          after: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop',
+          isDemo: true,
+          beforeLabel: 'Original (3.2 MB)',
+          afterLabel: 'Compressed (1 MB)'
+        })
+      })
+  }, [])
+
+  // update preview when file changes
   useEffect(() => {
     if (!file) {
       setPreview(null)
@@ -96,6 +150,18 @@ export default function UploadForm({ file, onFileChange }) {
         setError(data.error || data.message || 'Compression failed')
       } else {
         setResult(data)
+
+        // update comparison slider image
+        if (file) {
+          const objectUrl = URL.createObjectURL(file)
+          setComparisonData({
+            before: objectUrl,
+            after: data.download_url,
+            beforeLabel: `Original (${formatBytes(file.size)})`,
+            afterLabel: `Compressed (${formatBytes(data.size)})`,
+            isDemo: false
+          })
+        }
       }
     } catch (err) {
       setError(err.message || String(err))
@@ -108,7 +174,7 @@ export default function UploadForm({ file, onFileChange }) {
   function onDownload() {
     if (!result || !result.download_url) return
 
-    // use fetch to get the file as a blob
+    // fetch to get the file as a blob
     fetch(result.download_url)
       .then((response) => {
         if (!response.ok) throw new Error('Download failed')
@@ -229,9 +295,6 @@ export default function UploadForm({ file, onFileChange }) {
 
                 setSizeValue(String(val))
               }}
-              min="0.1"
-              max={sizeUnit === 'MB' ? 1 : 1024}
-              step={sizeUnit === 'MB' ? 0.1 : 1}
               className="block w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 transition-all hover:bg-white/10"
             />
             <select
@@ -319,6 +382,19 @@ export default function UploadForm({ file, onFileChange }) {
       {error && (
         <div className="text-red-100 bg-red-500/50 border border-red-500/50 rounded-lg p-3 text-center">
           Error: {error}
+        </div>
+      )}
+
+      {/* Comparison Slider */}
+      {comparisonData && (
+        <div className="space-y-4 animate-fade-in">
+
+          <ComparisonSlider
+            before={comparisonData.before}
+            after={comparisonData.after}
+            labelBefore={comparisonData.beforeLabel || (comparisonData.isDemo ? "Original" : "Original")}
+            labelAfter={comparisonData.afterLabel || (comparisonData.isDemo ? "Compressed (Simulated)" : "Compressed")}
+          />
         </div>
       )}
 
