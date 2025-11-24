@@ -1,8 +1,30 @@
 import React, { useState, useEffect } from 'react'
 import Spinner from './Spinner'
+import ComparisonSlider from './ComparisonSlider'
 
 // UploadForm() - image upload and compression form component
 export default function UploadForm({ file, onFileChange }) {
+  // formatBytes() - formats bytes to appropriate unit
+  const formatBytes = (bytes, decimals = 2, forceUnit = null) => {
+    if (!+bytes) return '0 Bytes'
+
+    const k = 1024
+    const dm = decimals < 0 ? 0 : decimals
+    const sizes = ['Bytes', 'KB', 'MB', 'GB']
+
+    if (forceUnit && sizes.includes(forceUnit)) {
+      const i = sizes.indexOf(forceUnit)
+      return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
+    }
+
+    if (bytes >= 1000000) {
+      return `${(bytes / (1024 * 1024)).toFixed(decimals)} MB`
+    }
+
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
+  }
+
   const [preview, setPreview] = useState(null)
 
   const [sizeValue, setSizeValue] = useState('1')
@@ -14,8 +36,81 @@ export default function UploadForm({ file, onFileChange }) {
   const [error, setError] = useState(null)
   const [result, setResult] = useState(null)
   const [isDragging, setIsDragging] = useState(false)
+  const [comparisonData, setComparisonData] = useState(null)
+  const [copied, setCopied] = useState(false)
+  const fileInputRef = React.useRef(null)
 
-  // effect to update the preview when a new file is selected
+  // fetch NASA APOD with caching
+  useEffect(() => {
+    const fetchAPOD = async () => {
+      try {
+        // check cache first
+        const today = new Date().toISOString().split('T')[0]
+        const cachedData = localStorage.getItem('apod_cache')
+        const cachedDate = localStorage.getItem('apod_date')
+
+        if (cachedData && cachedDate === today) {
+          console.log('Using cached APOD')
+          setComparisonData(JSON.parse(cachedData))
+          return
+        }
+
+        const apiKey = 'NASA_API_KEY'
+        const response = await fetch(
+          `https://api.nasa.gov/planetary/apod?api_key=${apiKey}`
+        )
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+
+        const data = await response.json()
+
+        if (data.media_type !== 'image' || !data.url) {
+          throw new Error('APOD is not an image today')
+        }
+
+        const apodData = {
+          before: data.url,
+          after: data.url,
+          isDemo: true,
+          beforeLabel: 'Original (3.2 MB)',
+          afterLabel: 'Compressed (1 MB)',
+        }
+
+        setComparisonData(apodData)
+
+        // cache for today
+        localStorage.setItem('apod_cache', JSON.stringify(apodData))
+        localStorage.setItem('apod_date', today)
+
+        console.log('Loaded fresh APOD:', data.title)
+      } catch (err) {
+        console.error('Failed to fetch NASA APOD:', err)
+
+        const cachedData = localStorage.getItem('apod_cache')
+        if (cachedData) {
+          console.log('Using previous APOD from cache')
+          setComparisonData(JSON.parse(cachedData))
+          return
+        }
+
+        setComparisonData({
+          before:
+            'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop',
+          after:
+            'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop',
+          isDemo: true,
+          beforeLabel: 'Original (3.2 MB)',
+          afterLabel: 'Compressed (1 MB)',
+        })
+      }
+    }
+
+    fetchAPOD()
+  }, [])
+
+  // update preview when file changes
   useEffect(() => {
     if (!file) {
       setPreview(null)
@@ -96,6 +191,18 @@ export default function UploadForm({ file, onFileChange }) {
         setError(data.error || data.message || 'Compression failed')
       } else {
         setResult(data)
+
+        // update comparison slider image
+        if (file) {
+          const objectUrl = URL.createObjectURL(file)
+          setComparisonData({
+            before: objectUrl,
+            after: data.download_url,
+            beforeLabel: `Original (${formatBytes(file.size)})`,
+            afterLabel: `Compressed (${formatBytes(data.size)})`,
+            isDemo: false,
+          })
+        }
       }
     } catch (err) {
       setError(err.message || String(err))
@@ -108,7 +215,7 @@ export default function UploadForm({ file, onFileChange }) {
   function onDownload() {
     if (!result || !result.download_url) return
 
-    // use fetch to get the file as a blob
+    // fetch to get the file as a blob
     fetch(result.download_url)
       .then((response) => {
         if (!response.ok) throw new Error('Download failed')
@@ -135,18 +242,31 @@ export default function UploadForm({ file, onFileChange }) {
       })
   }
 
+  // copyToClipboard() - copy link to clipboard
+  const copyToClipboard = async () => {
+    if (!result?.download_url) return
+
+    try {
+      await navigator.clipboard.writeText(result.download_url)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch (err) {
+      console.error('Failed to copy:', err)
+    }
+  }
+
   return (
-    <form onSubmit={onSubmit} className="space-y-6">
+    <form onSubmit={onSubmit} className="space-y-6 animate-slide-up">
       <div>
         <label className="block text-sm font-medium text-white/90 mb-2">
           Image
         </label>
         <div
-          className={`relative group border-2 border-dashed rounded-2xl transition-all duration-300 ease-out
+          className={`relative group border-2 border-dashed rounded-2xl transition-all duration-500 ease-out
             ${
               isDragging
-                ? 'border-white bg-white/20 backdrop-blur-md scale-[1.02] shadow-xl'
-                : 'border-white/30 hover:border-white/50 bg-white/10 backdrop-blur-sm hover:bg-white/15'
+                ? 'border-white bg-white/10 backdrop-blur-xl scale-[1.02] shadow-xl'
+                : 'border-white/20 hover:border-white/40 bg-white/5 backdrop-blur-md hover:bg-white/10'
             }
             ${preview ? 'p-0 overflow-hidden' : 'p-10'}
           `}
@@ -155,6 +275,7 @@ export default function UploadForm({ file, onFileChange }) {
           onDrop={handleDrop}
         >
           <input
+            ref={fileInputRef}
             type="file"
             accept="image/*"
             onChange={onFileChange}
@@ -162,13 +283,39 @@ export default function UploadForm({ file, onFileChange }) {
           />
 
           {preview ? (
-            <div className="relative w-full h-64 bg-black/20 group-hover:bg-black/30 transition-colors">
+            <div className="relative w-full h-64 bg-black/20 group-hover:bg-black/30 transition-all duration-300">
               <img
                 src={preview}
                 alt="preview"
                 className="w-full h-full object-contain"
               />
-              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-sm">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  if (fileInputRef.current) {
+                    fileInputRef.current.value = ''
+                  }
+                  onFileChange({ target: { files: [] } })
+                }}
+                className="absolute top-2 right-2 z-20 w-6 h-6 flex items-center justify-center rounded-full bg-black/50 hover:bg-black/70 border border-white/20 backdrop-blur-sm transition-all duration-200"
+                aria-label="Remove image"
+              >
+                <svg
+                  className="w-3.5 h-3.5 text-white"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/40 backdrop-blur-sm">
                 <p className="text-white font-medium">
                   Click or drop to replace
                 </p>
@@ -230,10 +377,7 @@ export default function UploadForm({ file, onFileChange }) {
 
                 setSizeValue(String(val))
               }}
-              min="0.1"
-              max={sizeUnit === 'MB' ? 1 : 1024}
-              step={sizeUnit === 'MB' ? 0.1 : 1}
-              className="block w-full bg-white/10 backdrop-blur-md border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50 transition-all hover:bg-white/20"
+              className="block w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 transition-all duration-200 hover:bg-white/10"
             />
             <select
               value={sizeUnit}
@@ -246,7 +390,7 @@ export default function UploadForm({ file, onFileChange }) {
                   setSizeValue('1')
                 }
               }}
-              className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50 appearance-none cursor-pointer w-28 transition-all hover:bg-white/20"
+              className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 appearance-none cursor-pointer w-28 transition-all duration-200 hover:bg-white/10"
             >
               <option value="KB" className="bg-gray-800 text-white">
                 KB
@@ -262,7 +406,7 @@ export default function UploadForm({ file, onFileChange }) {
           <select
             value={format}
             onChange={(e) => setFormat(e.target.value)}
-            className="mt-2 block w-full bg-white/10 backdrop-blur-md border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50 appearance-none cursor-pointer transition-all hover:bg-white/20"
+            className="mt-2 block w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 appearance-none cursor-pointer transition-all duration-200 hover:bg-white/10"
             style={{
               backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='white' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
               backgroundPosition: `right 1rem center`,
@@ -283,27 +427,29 @@ export default function UploadForm({ file, onFileChange }) {
         </label>
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
-        <label className="block text-sm font-medium text-white/90">
-          Quality: {quality}%
-          <input
-            type="range"
-            value={quality}
-            onChange={(e) => setQuality(Number(e.target.value))}
-            min={1}
-            max={100}
-            className="mt-2 block w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer accent-white hover:bg-white/30 transition-colors"
-          />
-        </label>
-        <div />
-      </div>
+      {format === 'jpeg' && (
+        <div className="grid grid-cols-2 gap-6">
+          <label className="block text-sm font-medium text-white/90">
+            Quality: {quality}%
+            <input
+              type="range"
+              value={quality}
+              onChange={(e) => setQuality(Number(e.target.value))}
+              min={1}
+              max={100}
+              className="mt-2 block w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer accent-white hover:bg-white/30 transition-all duration-200"
+            />
+          </label>
+          <div />
+        </div>
+      )}
 
       {/* Submit Button */}
       <div>
         <button
           type="submit"
           disabled={loading}
-          className="w-full inline-flex justify-center items-center gap-2 px-6 py-4 bg-white/20 hover:bg-white/30 text-white font-bold rounded-2xl transition-all duration-300 border border-white/30 shadow-lg hover:shadow-2xl hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed backdrop-blur-md"
+          className="w-full inline-flex justify-center items-center gap-2 px-6 py-4 bg-white/10 hover:bg-white/20 text-white font-bold rounded-2xl transition-all duration-300 border border-white/20 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 disabled:cursor-not-allowed backdrop-blur-xl backdrop-saturate-150"
         >
           {loading ? (
             <>
@@ -323,9 +469,27 @@ export default function UploadForm({ file, onFileChange }) {
         </div>
       )}
 
+      {/* Comparison Slider */}
+      {comparisonData && (
+        <div className="space-y-4 animate-fade-in">
+          <ComparisonSlider
+            before={comparisonData.before}
+            after={comparisonData.after}
+            labelBefore={
+              comparisonData.beforeLabel ||
+              (comparisonData.isDemo ? 'Original' : 'Original')
+            }
+            labelAfter={
+              comparisonData.afterLabel ||
+              (comparisonData.isDemo ? 'Compressed (Simulated)' : 'Compressed')
+            }
+          />
+        </div>
+      )}
+
       {/* Display the compression result */}
       {result && (
-        <div className="p-6 border border-white/30 border-t-white/60 border-l-white/60 rounded-2xl bg-white/20 backdrop-blur-2xl shadow-xl text-white animate-fade-in">
+        <div className="p-6 border border-white/20 border-t-white/40 border-l-white/40 rounded-2xl bg-white/10 backdrop-blur-xl shadow-xl text-white animate-scale-in">
           <div className="space-y-3 text-sm">
             <p>
               <strong className="font-semibold">Filename:</strong>{' '}
@@ -342,20 +506,66 @@ export default function UploadForm({ file, onFileChange }) {
           {result.download_url && (
             <div className="mt-4 flex items-center gap-4">
               <button
-                onClick={onDownload}
-                className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg border border-white/30 transition-colors"
                 type="button"
+                onClick={onDownload}
+                className="flex-1 bg-white/10 text-white py-3 px-6 rounded-xl font-bold border border-white/20 hover:bg-white/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 backdrop-blur-md shadow-lg"
               >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                  />
+                </svg>
                 Download
               </button>
-              <a
-                href={result.download_url}
-                className="text-white/80 hover:text-white underline text-sm"
-                target="_blank"
-                rel="noreferrer"
+              <button
+                type="button"
+                onClick={copyToClipboard}
+                className="bg-white/10 text-white py-3 px-6 rounded-xl font-bold border border-white/20 hover:bg-white/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 backdrop-blur-md shadow-lg"
               >
-                Open in new tab
-              </a>
+                {copied ? (
+                  <>
+                    <svg
+                      className="w-5 h-5 text-green-400"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                      />
+                    </svg>
+                    Copy Link
+                  </>
+                )}
+              </button>
             </div>
           )}
         </div>
