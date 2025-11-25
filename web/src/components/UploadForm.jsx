@@ -263,9 +263,10 @@ export default function UploadForm({ file, onFileChange }) {
         </label>
         <div
           className={`relative group border-2 border-dashed rounded-2xl transition-all duration-500 ease-out
-            ${isDragging
-              ? 'border-white bg-white/10 backdrop-blur-xl scale-[1.02] shadow-[0_8px_32px_0_rgba(31,38,135,0.37)]'
-              : 'border-white/20 hover:border-white/40 bg-white/5 backdrop-blur-md hover:bg-white/10 shadow-[inset_0_2px_4px_0_rgba(0,0,0,0.1)]'
+            ${
+              isDragging
+                ? 'border-white bg-white/10 backdrop-blur-xl scale-[1.02] shadow-[0_8px_32px_0_rgba(31,38,135,0.37)]'
+                : 'border-white/20 hover:border-white/40 bg-white/5 backdrop-blur-md hover:bg-white/10 shadow-[inset_0_2px_4px_0_rgba(0,0,0,0.1)]'
             }
             ${preview ? 'p-0 overflow-hidden border-white/10' : 'p-10'}
           `}
