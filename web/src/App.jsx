@@ -38,7 +38,7 @@ export default function App() {
 
           {/* File validation errors */}
           {fileError && (
-            <p className="text-red-100 bg-red-500/50 border border-red-500/50 rounded-lg p-3 font-medium mt-4 text-center">
+            <p className="text-red-100 bg-red-500/10 backdrop-blur-xl border border-red-500/20 rounded-xl p-4 font-medium mt-4 text-center shadow-[0_4px_16px_0_rgba(220,38,38,0.2)] animate-fade-in">
               {fileError}
             </p>
           )}
