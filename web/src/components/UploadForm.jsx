@@ -127,7 +127,7 @@ export default function UploadForm({ file, onFileChange }) {
   useEffect(() => {
     const multiplier = sizeUnit === 'MB' ? 1024 * 1024 : 1024
     const val = parseFloat(sizeValue) || 0
-    setMaxSize(val * multiplier)
+    setMaxSize(Math.floor(val * multiplier))
   }, [sizeValue, sizeUnit])
 
   // handle drag and drop events
