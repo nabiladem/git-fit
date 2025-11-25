@@ -263,12 +263,11 @@ export default function UploadForm({ file, onFileChange }) {
         </label>
         <div
           className={`relative group border-2 border-dashed rounded-2xl transition-all duration-500 ease-out
-            ${
-              isDragging
-                ? 'border-white bg-white/10 backdrop-blur-xl scale-[1.02] shadow-xl'
-                : 'border-white/20 hover:border-white/40 bg-white/5 backdrop-blur-md hover:bg-white/10'
+            ${isDragging
+              ? 'border-white bg-white/10 backdrop-blur-xl scale-[1.02] shadow-[0_8px_32px_0_rgba(31,38,135,0.37)]'
+              : 'border-white/20 hover:border-white/40 bg-white/5 backdrop-blur-md hover:bg-white/10 shadow-[inset_0_2px_4px_0_rgba(0,0,0,0.1)]'
             }
-            ${preview ? 'p-0 overflow-hidden' : 'p-10'}
+            ${preview ? 'p-0 overflow-hidden border-white/10' : 'p-10'}
           `}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
@@ -377,7 +376,7 @@ export default function UploadForm({ file, onFileChange }) {
 
                 setSizeValue(String(val))
               }}
-              className="block w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 transition-all duration-200 hover:bg-white/10"
+              className="block w-full bg-black/10 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 transition-all duration-200 hover:bg-black/20 shadow-inner"
             />
             <select
               value={sizeUnit}
@@ -390,7 +389,7 @@ export default function UploadForm({ file, onFileChange }) {
                   setSizeValue('1')
                 }
               }}
-              className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 appearance-none cursor-pointer w-28 transition-all duration-200 hover:bg-white/10"
+              className="bg-black/10 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 appearance-none cursor-pointer w-28 transition-all duration-200 hover:bg-black/20 shadow-inner"
             >
               <option value="KB" className="bg-gray-800 text-white">
                 KB
@@ -406,7 +405,7 @@ export default function UploadForm({ file, onFileChange }) {
           <select
             value={format}
             onChange={(e) => setFormat(e.target.value)}
-            className="mt-2 block w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 appearance-none cursor-pointer transition-all duration-200 hover:bg-white/10"
+            className="mt-2 block w-full bg-black/10 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 appearance-none cursor-pointer transition-all duration-200 hover:bg-black/20 shadow-inner"
             style={{
               backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='white' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
               backgroundPosition: `right 1rem center`,
@@ -449,7 +448,7 @@ export default function UploadForm({ file, onFileChange }) {
         <button
           type="submit"
           disabled={loading}
-          className="w-full inline-flex justify-center items-center gap-2 px-6 py-4 bg-white/10 hover:bg-white/20 text-white font-bold rounded-2xl transition-all duration-300 border border-white/20 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 disabled:cursor-not-allowed backdrop-blur-xl backdrop-saturate-150"
+          className="w-full inline-flex justify-center items-center gap-2 px-6 py-4 bg-gradient-to-br from-white/20 to-white/5 hover:from-white/30 hover:to-white/10 text-white font-bold rounded-2xl transition-all duration-300 border border-white/30 shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] hover:shadow-[0_8px_32px_0_rgba(31,38,135,0.5)] hover:scale-[1.02] active:scale-95 disabled:cursor-not-allowed backdrop-blur-xl backdrop-saturate-150 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]"
         >
           {loading ? (
             <>
@@ -489,7 +488,7 @@ export default function UploadForm({ file, onFileChange }) {
 
       {/* Display the compression result */}
       {result && (
-        <div className="p-6 border border-white/20 border-t-white/40 border-l-white/40 rounded-2xl bg-white/10 backdrop-blur-xl shadow-xl text-white animate-scale-in">
+        <div className="p-6 border border-white/20 border-t-white/40 border-l-white/40 rounded-2xl bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-xl shadow-[0_8px_32px_0_rgba(0,0,0,0.36)] text-white animate-scale-in ring-1 ring-white/10">
           <div className="space-y-3 text-sm">
             <p>
               <strong className="font-semibold">Filename:</strong>{' '}
@@ -508,7 +507,7 @@ export default function UploadForm({ file, onFileChange }) {
               <button
                 type="button"
                 onClick={onDownload}
-                className="flex-1 bg-white/10 text-white py-3 px-6 rounded-xl font-bold border border-white/20 hover:bg-white/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 backdrop-blur-md shadow-lg"
+                className="flex-1 bg-gradient-to-br from-white/20 to-white/5 hover:from-white/30 hover:to-white/10 text-white py-3 px-6 rounded-xl font-bold border border-white/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 backdrop-blur-md shadow-[0_4px_16px_0_rgba(31,38,135,0.37)] shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]"
               >
                 <svg
                   className="w-5 h-5"
@@ -528,7 +527,7 @@ export default function UploadForm({ file, onFileChange }) {
               <button
                 type="button"
                 onClick={copyToClipboard}
-                className="bg-white/10 text-white py-3 px-6 rounded-xl font-bold border border-white/20 hover:bg-white/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 backdrop-blur-md shadow-lg"
+                className="bg-gradient-to-br from-white/20 to-white/5 hover:from-white/30 hover:to-white/10 text-white py-3 px-6 rounded-xl font-bold border border-white/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 backdrop-blur-md shadow-[0_4px_16px_0_rgba(31,38,135,0.37)] shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]"
               >
                 {copied ? (
                   <>

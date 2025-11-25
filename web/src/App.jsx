@@ -22,7 +22,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6">
-      <div className="w-full max-w-3xl bg-white/10 backdrop-blur-xl backdrop-saturate-150 rounded-3xl shadow-2xl border border-white/20 border-t-white/50 border-l-white/50 p-10 shadow-[inset_0_0_40px_rgba(255,255,255,0.1)]">
+      <div className="w-full max-w-3xl bg-white/10 backdrop-blur-2xl backdrop-saturate-200 rounded-3xl shadow-2xl border border-white/20 border-t-white/40 border-l-white/30 p-10 shadow-[0_8px_32px_0_rgba(0,0,0,0.36)] ring-1 ring-white/10">
         <header className="mb-8 text-center">
           <h1 className="text-4xl font-bold text-white drop-shadow-md mb-2">
             git fit
