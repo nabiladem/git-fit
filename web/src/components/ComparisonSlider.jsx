@@ -64,7 +64,7 @@ export default function ComparisonSlider({
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-[400px] rounded-2xl overflow-hidden cursor-ew-resize select-none shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] border border-white/20 bg-white/10 backdrop-blur-xl backdrop-saturate-150"
+      className="relative w-full h-[400px] rounded-2xl overflow-hidden cursor-ew-resize select-none shadow-[0_8px_32px_0_rgba(0,0,0,0.36)] border border-white/20 bg-white/10 backdrop-blur-2xl backdrop-saturate-200 ring-1 ring-white/10"
       onMouseDown={(e) => {
         setIsDragging(true)
         handleMove(e)
@@ -80,7 +80,7 @@ export default function ComparisonSlider({
         alt="After"
         className="absolute inset-0 w-full h-full object-cover"
       />
-      <div className="absolute top-4 right-4 bg-black/40 backdrop-blur-md border border-white/10 text-white px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap shadow-lg">
+      <div className="absolute top-4 right-4 bg-black/40 backdrop-blur-xl border border-white/10 text-white px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap shadow-lg ring-1 ring-white/5">
         {labelAfter}
       </div>
 
@@ -95,7 +95,7 @@ export default function ComparisonSlider({
           className="absolute inset-0 w-full h-full object-cover max-w-none"
           style={{ width: containerWidth || '100%' }}
         />
-        <div className="absolute top-4 left-4 bg-black/40 backdrop-blur-md border border-white/10 text-white px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap shadow-lg">
+        <div className="absolute top-4 left-4 bg-black/40 backdrop-blur-xl border border-white/10 text-white px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap shadow-lg ring-1 ring-white/5">
           {labelBefore}
         </div>
       </div>
@@ -106,21 +106,21 @@ export default function ComparisonSlider({
         style={{ left: `${sliderPosition}%` }}
       >
         {/* The "Rod" - Refracting Light */}
-        <div className="absolute inset-0 bg-white/20 backdrop-blur-md backdrop-saturate-200 backdrop-contrast-125 border-x border-white/40 shadow-[0_0_15px_rgba(255,255,255,0.3)]"></div>
+        <div className="absolute inset-0 bg-white/30 backdrop-blur-md backdrop-saturate-200 backdrop-contrast-125 border-x border-white/50 shadow-[0_0_20px_rgba(255,255,255,0.4)]"></div>
 
         {/* The "Shine" - Reflecting Light */}
-        <div className="absolute inset-0 bg-gradient-to-b from-white/80 via-transparent to-white/80 opacity-50 mix-blend-overlay"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-white/90 via-transparent to-white/90 opacity-60 mix-blend-overlay"></div>
 
         {/* The "Knob" - Liquid Drop */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 rounded-full flex items-center justify-center group hover:scale-110 transition-transform duration-300">
           {/* Knob Background (Adaptive) */}
-          <div className="absolute inset-0 rounded-full bg-transparent backdrop-blur-[2px] backdrop-brightness-105 shadow-[inset_0_0_10px_rgba(255,255,255,0.1),0_5px_15px_rgba(0,0,0,0.1)] border border-white/20"></div>
+          <div className="absolute inset-0 rounded-full bg-white/10 backdrop-blur-sm backdrop-brightness-110 shadow-[inset_0_0_12px_rgba(255,255,255,0.3),0_8px_20px_rgba(0,0,0,0.2)] border border-white/30 ring-1 ring-white/20"></div>
 
           {/* Knob Reflection (Gloss) */}
-          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/30 to-transparent opacity-30 mix-blend-overlay"></div>
+          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/60 to-transparent opacity-40 mix-blend-overlay"></div>
 
           <svg
-            className="relative w-6 h-6 text-white/80 drop-shadow-sm"
+            className="relative w-6 h-6 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"

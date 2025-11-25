@@ -127,7 +127,7 @@ export default function UploadForm({ file, onFileChange }) {
   useEffect(() => {
     const multiplier = sizeUnit === 'MB' ? 1024 * 1024 : 1024
     const val = parseFloat(sizeValue) || 0
-    setMaxSize(val * multiplier)
+    setMaxSize(Math.floor(val * multiplier))
   }, [sizeValue, sizeUnit])
 
   // handle drag and drop events
@@ -258,17 +258,17 @@ export default function UploadForm({ file, onFileChange }) {
   return (
     <form onSubmit={onSubmit} className="space-y-6 animate-slide-up">
       <div>
-        <label className="block text-sm font-medium text-white/90 mb-2">
+        <label className="block text-sm font-semibold text-white drop-shadow-sm mb-2 ml-1">
           Image
         </label>
         <div
           className={`relative group border-2 border-dashed rounded-2xl transition-all duration-500 ease-out
             ${
               isDragging
-                ? 'border-white bg-white/10 backdrop-blur-xl scale-[1.02] shadow-xl'
-                : 'border-white/20 hover:border-white/40 bg-white/5 backdrop-blur-md hover:bg-white/10'
+                ? 'border-white bg-white/10 backdrop-blur-xl scale-[1.02] shadow-[0_8px_32px_0_rgba(31,38,135,0.37)]'
+                : 'border-white/20 hover:border-white/40 bg-white/5 backdrop-blur-md hover:bg-white/10 shadow-[inset_0_2px_4px_0_rgba(0,0,0,0.1)]'
             }
-            ${preview ? 'p-0 overflow-hidden' : 'p-10'}
+            ${preview ? 'p-0 overflow-hidden border-white/10' : 'p-10'}
           `}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
@@ -358,7 +358,7 @@ export default function UploadForm({ file, onFileChange }) {
 
       {/* Form Controls */}
       <div className="grid grid-cols-2 gap-6">
-        <label className="block text-sm font-medium text-white/90">
+        <label className="block text-sm font-semibold text-white drop-shadow-sm ml-1">
           Max size
           <div className="flex gap-2 mt-2">
             <input
@@ -377,70 +377,88 @@ export default function UploadForm({ file, onFileChange }) {
 
                 setSizeValue(String(val))
               }}
-              className="block w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 transition-all duration-200 hover:bg-white/10"
+              className="block w-full bg-white/5 backdrop-blur-xl border border-white/30 rounded-xl px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/40 transition-all duration-300 ease-out hover:bg-white/10 focus:bg-white/15 shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)]"
             />
-            <select
-              value={sizeUnit}
-              onChange={(e) => {
-                const newUnit = e.target.value
-                setSizeUnit(newUnit)
-                // Adjust value if it exceeds new limit
-                const val = parseFloat(sizeValue)
-                if (newUnit === 'MB' && val > 1) {
-                  setSizeValue('1')
-                }
-              }}
-              className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 appearance-none cursor-pointer w-28 transition-all duration-200 hover:bg-white/10"
-            >
-              <option value="KB" className="bg-gray-800 text-white">
-                KB
-              </option>
-              <option value="MB" className="bg-gray-800 text-white">
-                MB
-              </option>
-            </select>
+            <div className="relative flex bg-white/5 p-1 rounded-xl backdrop-blur-md border border-white/20 shadow-inner transition-all duration-300 ease-out">
+              {/* Sliding background */}
+              <div
+                className="absolute top-1 bottom-1 bg-white/20 rounded-lg backdrop-blur-md shadow-[0_4px_16px_0_rgba(31,38,135,0.37)] ring-1 ring-white/20 transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
+                style={{
+                  width: 'calc(50% - 4px)',
+                  transform: `translateX(${sizeUnit === 'MB' ? '100%' : '0%'})`,
+                }}
+              />
+              {['KB', 'MB'].map((unit) => (
+                <button
+                  key={unit}
+                  type="button"
+                  onClick={() => {
+                    setSizeUnit(unit)
+                    // Adjust value if it exceeds new limit
+                    const val = parseFloat(sizeValue)
+                    if (unit === 'MB' && val > 1) {
+                      setSizeValue('1')
+                    }
+                  }}
+                  className={`
+                    relative z-10 px-3 py-3 rounded-lg text-sm font-bold transition-colors duration-200 uppercase tracking-wide
+                    ${sizeUnit === unit ? 'text-white' : 'text-white/60 hover:text-white'}
+                  `}
+                >
+                  {unit}
+                </button>
+              ))}
+            </div>
           </div>
         </label>
-        <label className="block text-sm font-medium text-white/90">
+        <label className="block text-sm font-semibold text-white drop-shadow-sm ml-1">
           Format
-          <select
-            value={format}
-            onChange={(e) => setFormat(e.target.value)}
-            className="mt-2 block w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 appearance-none cursor-pointer transition-all duration-200 hover:bg-white/10"
-            style={{
-              backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='white' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-              backgroundPosition: `right 1rem center`,
-              backgroundRepeat: `no-repeat`,
-              backgroundSize: `1.5em 1.5em`,
-            }}
-          >
-            <option value="jpeg" className="bg-gray-800 text-white">
-              jpeg
-            </option>
-            <option value="png" className="bg-gray-800 text-white">
-              png
-            </option>
-            <option value="gif" className="bg-gray-800 text-white">
-              gif
-            </option>
-          </select>
+          <div className="relative mt-2 flex bg-white/5 p-1 rounded-xl backdrop-blur-md border border-white/20 shadow-inner transition-all duration-300 ease-out">
+            {/* Sliding background */}
+            <div
+              className="absolute top-1 bottom-1 bg-white/20 rounded-lg backdrop-blur-md shadow-[0_4px_16px_0_rgba(31,38,135,0.37)] ring-1 ring-white/20 transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
+              style={{
+                width: 'calc(33.333% - 4px)',
+                transform: `translateX(${format === 'jpeg' ? '0%' : format === 'png' ? '100%' : '200%'})`,
+              }}
+            />
+            {['jpeg', 'png', 'gif'].map((fmt) => (
+              <button
+                key={fmt}
+                type="button"
+                onClick={() => setFormat(fmt)}
+                className={`
+                  relative z-10 flex-1 py-3 rounded-lg text-sm font-bold transition-colors duration-200 uppercase tracking-wide
+                  ${format === fmt ? 'text-white' : 'text-white/60 hover:text-white'}
+                `}
+              >
+                {fmt}
+              </button>
+            ))}
+          </div>
         </label>
       </div>
 
       {format === 'jpeg' && (
-        <div className="grid grid-cols-2 gap-6">
-          <label className="block text-sm font-medium text-white/90">
-            Quality: {quality}%
+        <div className="space-y-2">
+          <div className="flex justify-between items-center ml-1">
+            <label className="block text-sm font-semibold text-white drop-shadow-sm">
+              Quality
+            </label>
+            <span className="text-sm font-medium text-white/80 bg-black/20 px-2 py-0.5 rounded-md border border-white/10">
+              {quality}%
+            </span>
+          </div>
+          <div className="relative h-6 flex items-center">
             <input
               type="range"
               value={quality}
               onChange={(e) => setQuality(Number(e.target.value))}
               min={1}
               max={100}
-              className="mt-2 block w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer accent-white hover:bg-white/30 transition-all duration-200"
+              className="w-full"
             />
-          </label>
-          <div />
+          </div>
         </div>
       )}
 
@@ -449,7 +467,7 @@ export default function UploadForm({ file, onFileChange }) {
         <button
           type="submit"
           disabled={loading}
-          className="w-full inline-flex justify-center items-center gap-2 px-6 py-4 bg-white/10 hover:bg-white/20 text-white font-bold rounded-2xl transition-all duration-300 border border-white/20 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 disabled:cursor-not-allowed backdrop-blur-xl backdrop-saturate-150"
+          className="w-full inline-flex justify-center items-center gap-2 px-6 py-4 bg-gradient-to-br from-white/20 to-white/5 hover:from-white/30 hover:to-white/10 text-white font-bold rounded-2xl transition-all duration-300 border border-white/30 shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] hover:shadow-[0_8px_32px_0_rgba(31,38,135,0.5)] hover:scale-[1.02] active:scale-95 disabled:cursor-not-allowed backdrop-blur-xl backdrop-saturate-150 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]"
         >
           {loading ? (
             <>
@@ -464,7 +482,7 @@ export default function UploadForm({ file, onFileChange }) {
 
       {/* Error Messages */}
       {error && (
-        <div className="text-red-100 bg-red-500/50 border border-red-500/50 rounded-lg p-3 text-center">
+        <div className="text-red-100 bg-red-500/10 backdrop-blur-xl border border-red-500/20 rounded-xl p-4 text-center shadow-[0_4px_16px_0_rgba(220,38,38,0.2)] animate-fade-in">
           Error: {error}
         </div>
       )}
@@ -489,7 +507,7 @@ export default function UploadForm({ file, onFileChange }) {
 
       {/* Display the compression result */}
       {result && (
-        <div className="p-6 border border-white/20 border-t-white/40 border-l-white/40 rounded-2xl bg-white/10 backdrop-blur-xl shadow-xl text-white animate-scale-in">
+        <div className="p-6 border border-white/20 border-t-white/40 border-l-white/40 rounded-2xl bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-xl shadow-[0_8px_32px_0_rgba(0,0,0,0.36)] text-white animate-scale-in ring-1 ring-white/10">
           <div className="space-y-3 text-sm">
             <p>
               <strong className="font-semibold">Filename:</strong>{' '}
@@ -508,7 +526,7 @@ export default function UploadForm({ file, onFileChange }) {
               <button
                 type="button"
                 onClick={onDownload}
-                className="flex-1 bg-white/10 text-white py-3 px-6 rounded-xl font-bold border border-white/20 hover:bg-white/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 backdrop-blur-md shadow-lg"
+                className="flex-1 bg-gradient-to-br from-white/20 to-white/5 hover:from-white/30 hover:to-white/10 text-white py-3 px-6 rounded-xl font-bold border border-white/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 backdrop-blur-md shadow-[0_4px_16px_0_rgba(31,38,135,0.37)] shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]"
               >
                 <svg
                   className="w-5 h-5"
@@ -528,7 +546,7 @@ export default function UploadForm({ file, onFileChange }) {
               <button
                 type="button"
                 onClick={copyToClipboard}
-                className="bg-white/10 text-white py-3 px-6 rounded-xl font-bold border border-white/20 hover:bg-white/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 backdrop-blur-md shadow-lg"
+                className="bg-gradient-to-br from-white/20 to-white/5 hover:from-white/30 hover:to-white/10 text-white py-3 px-6 rounded-xl font-bold border border-white/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 backdrop-blur-md shadow-[0_4px_16px_0_rgba(31,38,135,0.37)] shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]"
               >
                 {copied ? (
                   <>
