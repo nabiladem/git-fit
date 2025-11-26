@@ -263,10 +263,9 @@ export default function UploadForm({ file, onFileChange }) {
         </label>
         <div
           className={`relative group border-2 border-dashed rounded-2xl transition-all duration-500 ease-out
-            ${
-              isDragging
-                ? 'border-white bg-white/10 backdrop-blur-xl scale-[1.02] shadow-[0_8px_32px_0_rgba(31,38,135,0.37)]'
-                : 'border-white/20 hover:border-white/40 bg-white/5 backdrop-blur-md hover:bg-white/10 shadow-[inset_0_2px_4px_0_rgba(0,0,0,0.1)]'
+            ${isDragging
+              ? 'border-white bg-white/10 backdrop-blur-xl scale-[1.02] shadow-[0_8px_32px_0_rgba(31,38,135,0.37)]'
+              : 'border-white/20 hover:border-white/40 bg-white/5 backdrop-blur-md hover:bg-white/10 shadow-[inset_0_2px_4px_0_rgba(0,0,0,0.1)]'
             }
             ${preview ? 'p-0 overflow-hidden border-white/10' : 'p-10'}
           `}
@@ -508,21 +507,54 @@ export default function UploadForm({ file, onFileChange }) {
       {/* Display the compression result */}
       {result && (
         <div className="p-6 border border-white/20 border-t-white/40 border-l-white/40 rounded-2xl bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-xl shadow-[0_8px_32px_0_rgba(0,0,0,0.36)] text-white animate-scale-in ring-1 ring-white/10">
-          <div className="space-y-3 text-sm">
-            <p>
-              <strong className="font-semibold">Filename:</strong>{' '}
-              {result.filename}
-            </p>
-            <p>
-              <strong className="font-semibold">Size:</strong> {result.size}{' '}
-              bytes
-            </p>
-            <p>
-              <strong className="font-semibold">Type:</strong> {result.mime}
-            </p>
+          {/* Success Header */}
+          <div className="flex items-center gap-3 mb-5 pb-4 border-b border-white/10">
+            <div className="w-10 h-10 rounded-full bg-green-500/20 backdrop-blur-sm flex items-center justify-center ring-1 ring-green-400/30 animate-pulse">
+              <svg
+                className="w-6 h-6 text-green-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2.5}
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            </div>
+            <div>
+              <h3 className="font-bold text-white text-lg">Compression Complete</h3>
+              <p className="text-xs text-white/60 mt-0.5">Your image is ready to download</p>
+            </div>
           </div>
+
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 gap-4 mb-5">
+            <div className="flex flex-col p-3 rounded-lg bg-white/5 border border-white/10">
+              <span className="text-xs text-white/60 uppercase tracking-wide font-medium mb-1">Filename</span>
+              <span className="text-sm font-semibold text-white truncate" title={result.filename}>
+                {result.filename}
+              </span>
+            </div>
+            <div className="flex flex-col p-3 rounded-lg bg-white/5 border border-white/10">
+              <span className="text-xs text-white/60 uppercase tracking-wide font-medium mb-1">File Size</span>
+              <span className="text-sm font-semibold text-white">
+                {result.size} bytes
+              </span>
+            </div>
+            <div className="flex flex-col p-3 rounded-lg bg-white/5 border border-white/10 col-span-2">
+              <span className="text-xs text-white/60 uppercase tracking-wide font-medium mb-1">Format</span>
+              <span className="text-sm font-semibold text-white uppercase">
+                {result.mime}
+              </span>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
           {result.download_url && (
-            <div className="mt-4 flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={onDownload}
