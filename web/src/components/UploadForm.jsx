@@ -508,21 +508,139 @@ export default function UploadForm({ file, onFileChange }) {
       {/* Display the compression result */}
       {result && (
         <div className="p-6 border border-white/20 border-t-white/40 border-l-white/40 rounded-2xl bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-xl shadow-[0_8px_32px_0_rgba(0,0,0,0.36)] text-white animate-scale-in ring-1 ring-white/10">
-          <div className="space-y-3 text-sm">
-            <p>
-              <strong className="font-semibold">Filename:</strong>{' '}
-              {result.filename}
-            </p>
-            <p>
-              <strong className="font-semibold">Size:</strong> {result.size}{' '}
-              bytes
-            </p>
-            <p>
-              <strong className="font-semibold">Type:</strong> {result.mime}
-            </p>
+          {/* Success Header */}
+          <div className="flex items-center gap-3 mb-5 pb-4 border-b border-white/10">
+            <div className="w-10 h-10 rounded-full bg-green-500/10 backdrop-blur-sm flex items-center justify-center ring-1 ring-green-400/30 animate-pulse">
+              <svg
+                className="w-6 h-6 text-green-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                style={{
+                  filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.8))',
+                }}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2.5}
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            </div>
+            <div>
+              <h3
+                className="font-bold text-white text-lg"
+                style={{
+                  textShadow:
+                    '0 2px 8px rgba(0,0,0,0.8), 0 0 2px rgba(0,0,0,0.8)',
+                }}
+              >
+                Compression Complete
+              </h3>
+              <p
+                className="text-xs text-white mt-0.5"
+                style={{ textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}
+              >
+                Your image is ready to download
+              </p>
+            </div>
           </div>
+
+          {/* Compression Stats Banner */}
+          {file && (
+            <div className="mb-5 p-4 rounded-xl bg-gradient-to-r from-green-500/5 via-emerald-500/5 to-blue-500/5 border border-white/30 backdrop-blur-2xl bg-black/10">
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <div
+                    className="text-2xl font-bold text-green-400"
+                    style={{
+                      textShadow:
+                        '0 2px 8px rgba(0,0,0,0.8), 0 0 2px rgba(0,0,0,0.8)',
+                    }}
+                  >
+                    {(((file.size - result.size) / file.size) * 100).toFixed(1)}
+                    %
+                  </div>
+                  <div
+                    className="text-xs text-white uppercase tracking-wide font-medium mt-1"
+                    style={{ textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}
+                  >
+                    Size Reduced
+                  </div>
+                </div>
+                <div>
+                  <div
+                    className="text-2xl font-bold text-white"
+                    style={{
+                      textShadow:
+                        '0 2px 8px rgba(0,0,0,0.8), 0 0 2px rgba(0,0,0,0.8)',
+                    }}
+                  >
+                    {formatBytes(file.size - result.size)}
+                  </div>
+                  <div
+                    className="text-xs text-white uppercase tracking-wide font-medium mt-1"
+                    style={{ textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}
+                  >
+                    Space Saved
+                  </div>
+                </div>
+                <div>
+                  <div
+                    className="text-2xl font-bold text-blue-400"
+                    style={{
+                      textShadow:
+                        '0 2px 8px rgba(0,0,0,0.8), 0 0 2px rgba(0,0,0,0.8)',
+                    }}
+                  >
+                    {(file.size / result.size).toFixed(1)}:1
+                  </div>
+                  <div
+                    className="text-xs text-white uppercase tracking-wide font-medium mt-1"
+                    style={{ textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}
+                  >
+                    Compression
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 gap-4 mb-5">
+            <div className="flex flex-col p-3 rounded-lg bg-white/5 border border-white/10">
+              <span className="text-xs text-white/60 uppercase tracking-wide font-medium mb-1">
+                Filename
+              </span>
+              <span
+                className="text-sm font-semibold text-white truncate"
+                title={result.filename}
+              >
+                {result.filename}
+              </span>
+            </div>
+            <div className="flex flex-col p-3 rounded-lg bg-white/5 border border-white/10">
+              <span className="text-xs text-white/60 uppercase tracking-wide font-medium mb-1">
+                File Size
+              </span>
+              <span className="text-sm font-semibold text-white">
+                {result.size} bytes
+              </span>
+            </div>
+            <div className="flex flex-col p-3 rounded-lg bg-white/5 border border-white/10 col-span-2">
+              <span className="text-xs text-white/60 uppercase tracking-wide font-medium mb-1">
+                Format
+              </span>
+              <span className="text-sm font-semibold text-white uppercase">
+                {result.mime}
+              </span>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
           {result.download_url && (
-            <div className="mt-4 flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={onDownload}
