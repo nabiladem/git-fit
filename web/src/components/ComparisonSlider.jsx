@@ -30,6 +30,11 @@ export default function ComparisonSlider({
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
+  // reset slider position when images change
+  useEffect(() => {
+    Promise.resolve().then(() => setSliderPosition(50))
+  }, [before, after])
+
   // handle slider movement
   const handleMove = (event) => {
     if (!containerRef.current) return
@@ -38,7 +43,12 @@ export default function ComparisonSlider({
     const x = (event.clientX || event.touches[0].clientX) - containerRect.left
     const position = (x / containerRect.width) * 100
 
-    setSliderPosition(Math.min(100, Math.max(0, position)))
+    const knobRadius = 28
+    const offsetPercent = (knobRadius / containerRect.width) * 100
+
+    setSliderPosition(
+      Math.min(100 + offsetPercent, Math.max(-offsetPercent, position))
+    )
   }
 
   useEffect(() => {
@@ -64,7 +74,7 @@ export default function ComparisonSlider({
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-[400px] rounded-2xl overflow-hidden cursor-ew-resize select-none shadow-[0_8px_32px_0_rgba(0,0,0,0.36)] border border-white/20 bg-white/10 backdrop-blur-2xl backdrop-saturate-200 ring-1 ring-white/10"
+      className="relative w-full h-[400px] rounded-2xl overflow-hidden cursor-ew-resize select-none shadow-[var(--shadow-color)] border border-[var(--glass-border)] bg-[var(--glass-bg)] backdrop-blur-2xl backdrop-saturate-200 ring-1 ring-[var(--glass-border)]"
       onMouseDown={(e) => {
         setIsDragging(true)
         handleMove(e)
@@ -80,7 +90,7 @@ export default function ComparisonSlider({
         alt="After"
         className="absolute inset-0 w-full h-full object-cover"
       />
-      <div className="absolute top-4 right-4 bg-black/40 backdrop-blur-xl border border-white/10 text-white px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap shadow-lg ring-1 ring-white/5">
+      <div className="absolute top-4 right-4 bg-black/40 backdrop-blur-xl border border-[var(--glass-border)] text-white px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap shadow-lg ring-1 ring-[var(--glass-border)]">
         {labelAfter}
       </div>
 
@@ -95,18 +105,18 @@ export default function ComparisonSlider({
           className="absolute inset-0 w-full h-full object-cover max-w-none"
           style={{ width: containerWidth || '100%' }}
         />
-        <div className="absolute top-4 left-4 bg-black/40 backdrop-blur-xl border border-white/10 text-white px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap shadow-lg ring-1 ring-white/5">
+        <div className="absolute top-4 left-4 bg-black/40 backdrop-blur-xl border border-[var(--glass-border)] text-white px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap shadow-lg ring-1 ring-[var(--glass-border)]">
           {labelBefore}
         </div>
       </div>
 
       {/* Slider Handle */}
       <div
-        className="absolute top-0 bottom-0 w-1.5 cursor-ew-resize z-30"
+        className="absolute top-0 bottom-0 w-1.5 cursor-ew-resize z-30 -translate-x-1/2"
         style={{ left: `${sliderPosition}%` }}
       >
         {/* The "Rod" - Refracting Light */}
-        <div className="absolute inset-0 bg-white/30 backdrop-blur-md backdrop-saturate-200 backdrop-contrast-125 border-x border-white/50 shadow-[0_0_20px_rgba(255,255,255,0.4)]"></div>
+        <div className="absolute inset-0 bg-[var(--glass-highlight)] backdrop-blur-md backdrop-saturate-200 backdrop-contrast-125 border-x border-[var(--glass-border)] shadow-[0_0_20px_var(--glass-highlight)]"></div>
 
         {/* The "Shine" - Reflecting Light */}
         <div className="absolute inset-0 bg-gradient-to-b from-white/90 via-transparent to-white/90 opacity-60 mix-blend-overlay"></div>
@@ -114,7 +124,7 @@ export default function ComparisonSlider({
         {/* The "Knob" - Liquid Drop */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 rounded-full flex items-center justify-center group hover:scale-110 transition-transform duration-300">
           {/* Knob Background (Adaptive) */}
-          <div className="absolute inset-0 rounded-full bg-white/10 backdrop-blur-sm backdrop-brightness-110 shadow-[inset_0_0_12px_rgba(255,255,255,0.3),0_8px_20px_rgba(0,0,0,0.2)] border border-white/30 ring-1 ring-white/20"></div>
+          <div className="absolute inset-0 rounded-full bg-[var(--glass-bg)] backdrop-blur-sm backdrop-brightness-110 shadow-[inset_0_0_12px_rgba(255,255,255,0.3),0_8px_20px_rgba(0,0,0,0.2)] border border-[var(--glass-border)] ring-1 ring-[var(--glass-border)]"></div>
 
           {/* Knob Reflection (Gloss) */}
           <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/60 to-transparent opacity-40 mix-blend-overlay"></div>

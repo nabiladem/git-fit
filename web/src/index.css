@@ -6,6 +6,32 @@
 
 :root {
   font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
+
+  /* Dark Mode (New Darker Glassy) */
+  --bg-gradient: linear-gradient(to bottom right, #0f2027, #203a43, #2c5364);
+  --glass-bg: rgba(0, 0, 0, 0.3);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-highlight: rgba(255, 255, 255, 0.05);
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.5);
+  --shadow-color: rgba(0, 0, 0, 0.5);
+  --accent-color: #ffffff;
+  --input-bg: rgba(0, 0, 0, 0.4);
+  --stats-bg: rgba(0, 0, 0, 0.5);
+}
+
+[data-theme='light'] {
+  /* Light Mode (Original Vibrant Liquid Glass) */
+  --bg-gradient: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+  --glass-bg: rgba(255, 255, 255, 0.1);
+  --glass-border: rgba(255, 255, 255, 0.2);
+  --glass-highlight: rgba(255, 255, 255, 0.4);
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.6);
+  --shadow-color: rgba(0, 0, 0, 0.36);
+  --accent-color: #ffffff;
+  --input-bg: rgba(255, 255, 255, 0.05);
+  --stats-bg: rgba(0, 0, 0, 0.2);
 }
 
 input,
@@ -19,10 +45,11 @@ body {
   margin: 0;
   padding: 0;
   min-height: 100vh;
-  background: linear-gradient(45deg, #ff9a9e 0%, #fad0c4 99%, #fad0c4 100%);
-  background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+  background: var(--bg-gradient);
   background-size: 400% 400%;
   animation: gradient 15s ease infinite;
+  color: var(--text-primary);
+  transition: color 0.3s ease;
 }
 
 @keyframes gradient {

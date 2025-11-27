@@ -45,7 +45,9 @@ export default function UploadForm({ file, onFileChange }) {
     const fetchAPOD = async () => {
       try {
         // check cache first
-        const today = new Date().toISOString().split('T')[0]
+        const today = new Date().toLocaleDateString('en-CA', {
+          timeZone: 'America/New_York',
+        })
         const cachedData = localStorage.getItem('apod_cache')
         const cachedDate = localStorage.getItem('apod_date')
 
@@ -55,7 +57,10 @@ export default function UploadForm({ file, onFileChange }) {
           return
         }
 
-        const apiKey = 'NASA_API_KEY'
+        const apiKey =
+          import.meta.env.NASA_API_KEY ||
+          import.meta.env.VITE_NASA_API_KEY ||
+          'DEMO_KEY'
         const response = await fetch(
           `https://api.nasa.gov/planetary/apod?api_key=${apiKey}`
         )
@@ -83,7 +88,6 @@ export default function UploadForm({ file, onFileChange }) {
         // cache for today
         localStorage.setItem('apod_cache', JSON.stringify(apodData))
         localStorage.setItem('apod_date', today)
-
         console.log('Loaded fresh APOD:', data.title)
       } catch (err) {
         console.error('Failed to fetch NASA APOD:', err)
@@ -258,17 +262,17 @@ export default function UploadForm({ file, onFileChange }) {
   return (
     <form onSubmit={onSubmit} className="space-y-6 animate-slide-up">
       <div>
-        <label className="block text-sm font-semibold text-white drop-shadow-sm mb-2 ml-1">
+        <label className="block text-sm font-semibold text-[var(--text-primary)] drop-shadow-sm mb-2 ml-1">
           Image
         </label>
         <div
           className={`relative group border-2 border-dashed rounded-2xl transition-all duration-500 ease-out
             ${
               isDragging
-                ? 'border-white bg-white/10 backdrop-blur-xl scale-[1.02] shadow-[0_8px_32px_0_rgba(31,38,135,0.37)]'
-                : 'border-white/20 hover:border-white/40 bg-white/5 backdrop-blur-md hover:bg-white/10 shadow-[inset_0_2px_4px_0_rgba(0,0,0,0.1)]'
+                ? 'border-[var(--glass-border)] bg-[var(--glass-bg)] backdrop-blur-xl scale-[1.02] shadow-[var(--shadow-color)]'
+                : 'border-[var(--glass-border)] hover:border-[var(--glass-highlight)] bg-[var(--glass-bg)] backdrop-blur-md hover:bg-[var(--glass-highlight)] shadow-[inset_0_2px_4px_0_rgba(0,0,0,0.1)]'
             }
-            ${preview ? 'p-0 overflow-hidden border-white/10' : 'p-10'}
+            ${preview ? 'p-0 overflow-hidden border-[var(--glass-border)]' : 'p-10'}
           `}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
@@ -326,9 +330,9 @@ export default function UploadForm({ file, onFileChange }) {
             </div>
           ) : (
             <div className="text-center space-y-4 pointer-events-none">
-              <div className="w-16 h-16 mx-auto bg-white/10 rounded-full flex items-center justify-center mb-4">
+              <div className="w-16 h-16 mx-auto bg-[var(--glass-bg)] rounded-full flex items-center justify-center mb-4">
                 <svg
-                  className="w-8 h-8 text-white/80"
+                  className="w-8 h-8 text-[var(--text-secondary)]"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -342,12 +346,12 @@ export default function UploadForm({ file, onFileChange }) {
                 </svg>
               </div>
               <div>
-                <p className="text-lg font-medium text-white">
+                <p className="text-lg font-medium text-[var(--text-primary)]">
                   {isDragging
                     ? 'Drop image here'
                     : 'Click to upload or drag and drop'}
                 </p>
-                <p className="text-sm text-white/60 mt-1">
+                <p className="text-sm text-[var(--text-secondary)] mt-1">
                   SVG, PNG, JPG or GIF (max 5MB)
                 </p>
               </div>
@@ -377,12 +381,12 @@ export default function UploadForm({ file, onFileChange }) {
 
                 setSizeValue(String(val))
               }}
-              className="block w-full bg-white/5 backdrop-blur-xl border border-white/30 rounded-xl px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/40 transition-all duration-300 ease-out hover:bg-white/10 focus:bg-white/15 shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)]"
+              className="block w-full bg-[var(--input-bg)] backdrop-blur-xl border border-[var(--glass-border)] rounded-xl px-4 py-3 text-[var(--text-primary)] placeholder-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--glass-border)] focus:border-[var(--glass-highlight)] transition-all duration-300 ease-out hover:bg-[var(--glass-highlight)] focus:bg-[var(--glass-highlight)] shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)]"
             />
-            <div className="relative flex bg-white/5 p-1 rounded-xl backdrop-blur-md border border-white/20 shadow-inner transition-all duration-300 ease-out">
+            <div className="relative flex bg-[var(--input-bg)] p-1 rounded-xl backdrop-blur-md border border-[var(--glass-border)] shadow-inner transition-all duration-300 ease-out">
               {/* Sliding background */}
               <div
-                className="absolute top-1 bottom-1 bg-white/20 rounded-lg backdrop-blur-md shadow-[0_4px_16px_0_rgba(31,38,135,0.37)] ring-1 ring-white/20 transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
+                className="absolute top-1 bottom-1 bg-[var(--glass-highlight)] rounded-lg backdrop-blur-md ring-1 ring-[var(--glass-border)] transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
                 style={{
                   width: 'calc(50% - 4px)',
                   transform: `translateX(${sizeUnit === 'MB' ? '100%' : '0%'})`,
@@ -402,7 +406,7 @@ export default function UploadForm({ file, onFileChange }) {
                   }}
                   className={`
                     relative z-10 px-3 py-3 rounded-lg text-sm font-bold transition-colors duration-200 uppercase tracking-wide
-                    ${sizeUnit === unit ? 'text-white' : 'text-white/60 hover:text-white'}
+                    ${sizeUnit === unit ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}
                   `}
                 >
                   {unit}
@@ -411,12 +415,12 @@ export default function UploadForm({ file, onFileChange }) {
             </div>
           </div>
         </label>
-        <label className="block text-sm font-semibold text-white drop-shadow-sm ml-1">
+        <label className="block text-sm font-semibold text-[var(--text-primary)] drop-shadow-sm ml-1">
           Format
-          <div className="relative mt-2 flex bg-white/5 p-1 rounded-xl backdrop-blur-md border border-white/20 shadow-inner transition-all duration-300 ease-out">
+          <div className="relative mt-2 flex bg-[var(--input-bg)] p-1 rounded-xl backdrop-blur-md border border-[var(--glass-border)] shadow-inner transition-all duration-300 ease-out">
             {/* Sliding background */}
             <div
-              className="absolute top-1 bottom-1 bg-white/20 rounded-lg backdrop-blur-md shadow-[0_4px_16px_0_rgba(31,38,135,0.37)] ring-1 ring-white/20 transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
+              className="absolute top-1 bottom-1 bg-[var(--glass-highlight)] rounded-lg backdrop-blur-md ring-1 ring-[var(--glass-border)] transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
               style={{
                 width: 'calc(33.333% - 4px)',
                 transform: `translateX(${format === 'jpeg' ? '0%' : format === 'png' ? '100%' : '200%'})`,
@@ -429,7 +433,7 @@ export default function UploadForm({ file, onFileChange }) {
                 onClick={() => setFormat(fmt)}
                 className={`
                   relative z-10 flex-1 py-3 rounded-lg text-sm font-bold transition-colors duration-200 uppercase tracking-wide
-                  ${format === fmt ? 'text-white' : 'text-white/60 hover:text-white'}
+                  ${format === fmt ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}
                 `}
               >
                 {fmt}
@@ -440,12 +444,12 @@ export default function UploadForm({ file, onFileChange }) {
       </div>
 
       {format === 'jpeg' && (
-        <div className="space-y-2">
+        <div className="space-y-2 animate-fade-in">
           <div className="flex justify-between items-center ml-1">
-            <label className="block text-sm font-semibold text-white drop-shadow-sm">
+            <label className="block text-sm font-semibold text-[var(--text-primary)] drop-shadow-sm">
               Quality
             </label>
-            <span className="text-sm font-medium text-white/80 bg-black/20 px-2 py-0.5 rounded-md border border-white/10">
+            <span className="text-sm font-medium text-[var(--text-secondary)] bg-[var(--input-bg)] px-2 py-0.5 rounded-md border border-[var(--glass-border)]">
               {quality}%
             </span>
           </div>
@@ -467,7 +471,7 @@ export default function UploadForm({ file, onFileChange }) {
         <button
           type="submit"
           disabled={loading}
-          className="w-full inline-flex justify-center items-center gap-2 px-6 py-4 bg-gradient-to-br from-white/20 to-white/5 hover:from-white/30 hover:to-white/10 text-white font-bold rounded-2xl transition-all duration-300 border border-white/30 shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] hover:shadow-[0_8px_32px_0_rgba(31,38,135,0.5)] hover:scale-[1.02] active:scale-95 disabled:cursor-not-allowed backdrop-blur-xl backdrop-saturate-150 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]"
+          className="w-full inline-flex justify-center items-center gap-2 px-6 py-4 bg-gradient-to-br from-[var(--glass-highlight)] to-[var(--glass-bg)] hover:from-[var(--glass-border)] hover:to-[var(--glass-highlight)] text-[var(--text-primary)] font-bold rounded-2xl transition-all duration-300 border border-[var(--glass-border)] hover:scale-[1.02] active:scale-95 disabled:cursor-not-allowed backdrop-blur-xl backdrop-saturate-150 shadow-[inset_0_1px_0_var(--glass-highlight)]"
         >
           {loading ? (
             <>
@@ -507,9 +511,9 @@ export default function UploadForm({ file, onFileChange }) {
 
       {/* Display the compression result */}
       {result && (
-        <div className="p-6 border border-white/20 border-t-white/40 border-l-white/40 rounded-2xl bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-xl shadow-[0_8px_32px_0_rgba(0,0,0,0.36)] text-white animate-scale-in ring-1 ring-white/10">
+        <div className="p-6 border border-[var(--glass-border)] border-t-[var(--glass-highlight)] border-l-[var(--glass-highlight)] rounded-2xl bg-[var(--glass-bg)] backdrop-blur-xl shadow-[var(--shadow-color)] text-[var(--text-primary)] animate-scale-in ring-1 ring-[var(--glass-border)]">
           {/* Success Header */}
-          <div className="flex items-center gap-3 mb-5 pb-4 border-b border-white/10">
+          <div className="flex items-center gap-3 mb-5 pb-4 border-b border-[var(--glass-border)]">
             <div className="w-10 h-10 rounded-full bg-green-500/10 backdrop-blur-sm flex items-center justify-center ring-1 ring-green-400/30 animate-pulse">
               <svg
                 className="w-6 h-6 text-green-400"
@@ -530,7 +534,7 @@ export default function UploadForm({ file, onFileChange }) {
             </div>
             <div>
               <h3
-                className="font-bold text-white text-lg"
+                className="font-bold text-[var(--text-primary)] text-lg"
                 style={{
                   textShadow:
                     '0 2px 8px rgba(0,0,0,0.8), 0 0 2px rgba(0,0,0,0.8)',
@@ -539,7 +543,7 @@ export default function UploadForm({ file, onFileChange }) {
                 Compression Complete
               </h3>
               <p
-                className="text-xs text-white mt-0.5"
+                className="text-xs text-[var(--text-primary)] mt-0.5"
                 style={{ textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}
               >
                 Your image is ready to download
@@ -549,7 +553,7 @@ export default function UploadForm({ file, onFileChange }) {
 
           {/* Compression Stats Banner */}
           {file && (
-            <div className="mb-5 p-4 rounded-xl bg-gradient-to-r from-green-500/5 via-emerald-500/5 to-blue-500/5 border border-white/30 backdrop-blur-2xl bg-black/10">
+            <div className="mb-5 p-4 rounded-xl bg-gradient-to-r from-green-500/5 via-emerald-500/5 to-blue-500/5 border border-[var(--glass-border)] backdrop-blur-2xl bg-[var(--stats-bg)]">
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
                   <div
@@ -563,7 +567,7 @@ export default function UploadForm({ file, onFileChange }) {
                     %
                   </div>
                   <div
-                    className="text-xs text-white uppercase tracking-wide font-medium mt-1"
+                    className="text-xs text-[var(--text-primary)] uppercase tracking-wide font-medium mt-1"
                     style={{ textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}
                   >
                     Size Reduced
@@ -571,7 +575,7 @@ export default function UploadForm({ file, onFileChange }) {
                 </div>
                 <div>
                   <div
-                    className="text-2xl font-bold text-white"
+                    className="text-2xl font-bold text-[var(--text-primary)]"
                     style={{
                       textShadow:
                         '0 2px 8px rgba(0,0,0,0.8), 0 0 2px rgba(0,0,0,0.8)',
@@ -580,7 +584,7 @@ export default function UploadForm({ file, onFileChange }) {
                     {formatBytes(file.size - result.size)}
                   </div>
                   <div
-                    className="text-xs text-white uppercase tracking-wide font-medium mt-1"
+                    className="text-xs text-[var(--text-primary)] uppercase tracking-wide font-medium mt-1"
                     style={{ textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}
                   >
                     Space Saved
@@ -597,7 +601,7 @@ export default function UploadForm({ file, onFileChange }) {
                     {(file.size / result.size).toFixed(1)}:1
                   </div>
                   <div
-                    className="text-xs text-white uppercase tracking-wide font-medium mt-1"
+                    className="text-xs text-[var(--text-primary)] uppercase tracking-wide font-medium mt-1"
                     style={{ textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}
                   >
                     Compression
@@ -609,30 +613,30 @@ export default function UploadForm({ file, onFileChange }) {
 
           {/* Stats Grid */}
           <div className="grid grid-cols-2 gap-4 mb-5">
-            <div className="flex flex-col p-3 rounded-lg bg-white/5 border border-white/10">
-              <span className="text-xs text-white/60 uppercase tracking-wide font-medium mb-1">
+            <div className="flex flex-col p-3 rounded-lg bg-[var(--input-bg)] border border-[var(--glass-border)]">
+              <span className="text-xs text-[var(--text-secondary)] uppercase tracking-wide font-medium mb-1">
                 Filename
               </span>
               <span
-                className="text-sm font-semibold text-white truncate"
+                className="text-sm font-semibold text-[var(--text-primary)] truncate"
                 title={result.filename}
               >
                 {result.filename}
               </span>
             </div>
-            <div className="flex flex-col p-3 rounded-lg bg-white/5 border border-white/10">
-              <span className="text-xs text-white/60 uppercase tracking-wide font-medium mb-1">
+            <div className="flex flex-col p-3 rounded-lg bg-[var(--input-bg)] border border-[var(--glass-border)]">
+              <span className="text-xs text-[var(--text-secondary)] uppercase tracking-wide font-medium mb-1">
                 File Size
               </span>
-              <span className="text-sm font-semibold text-white">
+              <span className="text-sm font-semibold text-[var(--text-primary)]">
                 {result.size} bytes
               </span>
             </div>
-            <div className="flex flex-col p-3 rounded-lg bg-white/5 border border-white/10 col-span-2">
-              <span className="text-xs text-white/60 uppercase tracking-wide font-medium mb-1">
+            <div className="flex flex-col p-3 rounded-lg bg-[var(--input-bg)] border border-[var(--glass-border)] col-span-2">
+              <span className="text-xs text-[var(--text-secondary)] uppercase tracking-wide font-medium mb-1">
                 Format
               </span>
-              <span className="text-sm font-semibold text-white uppercase">
+              <span className="text-sm font-semibold text-[var(--text-primary)] uppercase">
                 {result.mime}
               </span>
             </div>
@@ -644,7 +648,7 @@ export default function UploadForm({ file, onFileChange }) {
               <button
                 type="button"
                 onClick={onDownload}
-                className="flex-1 bg-gradient-to-br from-white/20 to-white/5 hover:from-white/30 hover:to-white/10 text-white py-3 px-6 rounded-xl font-bold border border-white/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 backdrop-blur-md shadow-[0_4px_16px_0_rgba(31,38,135,0.37)] shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]"
+                className="flex-1 bg-gradient-to-br from-[var(--glass-highlight)] to-[var(--glass-bg)] hover:from-[var(--glass-border)] hover:to-[var(--glass-highlight)] text-[var(--text-primary)] py-3 px-6 rounded-xl font-bold border border-[var(--glass-border)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 backdrop-blur-md shadow-[inset_0_1px_0_var(--glass-highlight)]"
               >
                 <svg
                   className="w-5 h-5"
@@ -664,7 +668,7 @@ export default function UploadForm({ file, onFileChange }) {
               <button
                 type="button"
                 onClick={copyToClipboard}
-                className="bg-gradient-to-br from-white/20 to-white/5 hover:from-white/30 hover:to-white/10 text-white py-3 px-6 rounded-xl font-bold border border-white/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 backdrop-blur-md shadow-[0_4px_16px_0_rgba(31,38,135,0.37)] shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]"
+                className="bg-gradient-to-br from-[var(--glass-highlight)] to-[var(--glass-bg)] hover:from-[var(--glass-border)] hover:to-[var(--glass-highlight)] text-[var(--text-primary)] py-3 px-6 rounded-xl font-bold border border-[var(--glass-border)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 backdrop-blur-md shadow-[inset_0_1px_0_var(--glass-highlight)]"
               >
                 {copied ? (
                   <>
