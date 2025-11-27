@@ -30,9 +30,9 @@ export default function ComparisonSlider({
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  // Reset slider position when images change
+  // reset slider position when images change
   useEffect(() => {
-    setSliderPosition(50)
+    Promise.resolve().then(() => setSliderPosition(50))
   }, [before, after])
 
   // handle slider movement

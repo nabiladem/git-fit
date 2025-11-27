@@ -8,7 +8,7 @@ export default function App() {
   const [fileError, setFileError] = useState(null)
   const [theme, setTheme] = useState('dark')
 
-  // Handle theme change
+  // handle theme change
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
   }, [theme])
