@@ -30,6 +30,11 @@ export default function ComparisonSlider({
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
+  // Reset slider position when images change
+  useEffect(() => {
+    setSliderPosition(50)
+  }, [before, after])
+
   // handle slider movement
   const handleMove = (event) => {
     if (!containerRef.current) return
@@ -38,7 +43,12 @@ export default function ComparisonSlider({
     const x = (event.clientX || event.touches[0].clientX) - containerRect.left
     const position = (x / containerRect.width) * 100
 
-    setSliderPosition(Math.min(100, Math.max(0, position)))
+    const knobRadius = 28
+    const offsetPercent = (knobRadius / containerRect.width) * 100
+
+    setSliderPosition(
+      Math.min(100 + offsetPercent, Math.max(-offsetPercent, position))
+    )
   }
 
   useEffect(() => {
@@ -102,7 +112,7 @@ export default function ComparisonSlider({
 
       {/* Slider Handle */}
       <div
-        className="absolute top-0 bottom-0 w-1.5 cursor-ew-resize z-30"
+        className="absolute top-0 bottom-0 w-1.5 cursor-ew-resize z-30 -translate-x-1/2"
         style={{ left: `${sliderPosition}%` }}
       >
         {/* The "Rod" - Refracting Light */}
