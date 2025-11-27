@@ -45,7 +45,9 @@ export default function UploadForm({ file, onFileChange }) {
     const fetchAPOD = async () => {
       try {
         // check cache first
-        const today = new Date().toISOString().split('T')[0]
+        const today = new Date().toLocaleDateString('en-CA', {
+          timeZone: 'America/New_York',
+        })
         const cachedData = localStorage.getItem('apod_cache')
         const cachedDate = localStorage.getItem('apod_date')
 
@@ -55,7 +57,10 @@ export default function UploadForm({ file, onFileChange }) {
           return
         }
 
-        const apiKey = 'NASA_API_KEY'
+        const apiKey =
+          import.meta.env.NASA_API_KEY ||
+          import.meta.env.VITE_NASA_API_KEY ||
+          'DEMO_KEY'
         const response = await fetch(
           `https://api.nasa.gov/planetary/apod?api_key=${apiKey}`
         )
@@ -83,7 +88,6 @@ export default function UploadForm({ file, onFileChange }) {
         // cache for today
         localStorage.setItem('apod_cache', JSON.stringify(apodData))
         localStorage.setItem('apod_date', today)
-
         console.log('Loaded fresh APOD:', data.title)
       } catch (err) {
         console.error('Failed to fetch NASA APOD:', err)

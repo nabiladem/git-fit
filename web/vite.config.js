@@ -6,6 +6,8 @@ export default defineConfig({
   plugins: [react()],
 
   base: '/',
+  envDir: '..', // Load .env from project root
+  envPrefix: ['VITE_', 'NASA_'], // Expose VITE_ and NASA_ variables
 
   // Define development server configuration
   server: {
