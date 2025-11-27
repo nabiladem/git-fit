@@ -31,7 +31,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 transition-colors duration-500">
+    <div className="min-h-screen flex items-start justify-center p-6 pt-20 transition-colors duration-500">
       <div className="relative w-full max-w-3xl bg-[var(--glass-bg)] backdrop-blur-2xl backdrop-saturate-200 rounded-3xl shadow-2xl border border-[var(--glass-border)] border-t-[var(--glass-highlight)] border-l-[var(--glass-highlight)] p-10 shadow-[var(--shadow-color)] ring-1 ring-[var(--glass-border)] transition-all duration-500">
         <header className="mb-8 text-center relative">
           {/* Theme Toggle */}

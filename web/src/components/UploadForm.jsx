@@ -444,7 +444,7 @@ export default function UploadForm({ file, onFileChange }) {
       </div>
 
       {format === 'jpeg' && (
-        <div className="space-y-2">
+        <div className="space-y-2 animate-fade-in">
           <div className="flex justify-between items-center ml-1">
             <label className="block text-sm font-semibold text-[var(--text-primary)] drop-shadow-sm">
               Quality
