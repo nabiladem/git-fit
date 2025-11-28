@@ -24,7 +24,6 @@ export default function ComparisonSlider({
         setContainerWidth(containerRef.current.offsetWidth)
       }
     }
-
     window.addEventListener('resize', handleResize)
 
     return () => window.removeEventListener('resize', handleResize)
@@ -32,6 +31,7 @@ export default function ComparisonSlider({
 
   // reset slider position when images change
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSliderPosition(50)
   }, [before, after])
 

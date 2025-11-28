@@ -48,9 +48,9 @@ export default function UploadForm({ file, onFileChange }) {
   const startChanging = (direction) => {
     updateValue(direction)
 
-    if (intervalRef.current) clearInterval(intervalRef.current)
+    if (intervalRef.current) window.clearInterval(intervalRef.current)
 
-    intervalRef.current = setInterval(() => {
+    intervalRef.current = window.setInterval(() => {
       updateValue(direction)
     }, 250)
   }
@@ -58,7 +58,7 @@ export default function UploadForm({ file, onFileChange }) {
   // stopChanging() - stops continuous value update
   const stopChanging = () => {
     if (intervalRef.current) {
-      clearInterval(intervalRef.current)
+      window.clearInterval(intervalRef.current)
       intervalRef.current = null
     }
   }
