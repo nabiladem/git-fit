@@ -40,78 +40,76 @@ export default function UploadForm({ file, onFileChange }) {
   const [copied, setCopied] = useState(false)
   const fileInputRef = React.useRef(null)
 
+  // loadAPOD() - fetches or loads cached APOD data
+  const loadAPOD = async () => {
+    try {
+      // check cache first
+      const today = new Date().toLocaleDateString('en-CA', {
+        timeZone: 'America/New_York',
+      })
+      const cachedData = localStorage.getItem('apod_cache')
+      const cachedDate = localStorage.getItem('apod_date')
+
+      if (cachedData && cachedDate === today) {
+        setComparisonData(JSON.parse(cachedData))
+        return
+      }
+
+      const apiKey =
+        import.meta.env.NASA_API_KEY ||
+        import.meta.env.VITE_NASA_API_KEY ||
+        'DEMO_KEY'
+      const response = await fetch(
+        `https://api.nasa.gov/planetary/apod?api_key=${apiKey}`
+      )
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+
+      if (data.media_type !== 'image' || !data.url) {
+        throw new Error('APOD is not an image today')
+      }
+
+      const apodData = {
+        before: data.url,
+        after: data.url,
+        isDemo: true,
+        beforeLabel: 'Original (3.2 MB)',
+        afterLabel: 'Compressed (1 MB)',
+      }
+
+      setComparisonData(apodData)
+
+      // cache for today
+      localStorage.setItem('apod_cache', JSON.stringify(apodData))
+      localStorage.setItem('apod_date', today)
+    } catch (err) {
+      console.error('Failed to fetch NASA APOD:', err)
+
+      const cachedData = localStorage.getItem('apod_cache')
+      if (cachedData) {
+        setComparisonData(JSON.parse(cachedData))
+        return
+      }
+
+      setComparisonData({
+        before:
+          'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop',
+        after:
+          'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop',
+        isDemo: true,
+        beforeLabel: 'Original (3.2 MB)',
+        afterLabel: 'Compressed (1 MB)',
+      })
+    }
+  }
+
   // fetch NASA APOD with caching
   useEffect(() => {
-    const fetchAPOD = async () => {
-      try {
-        // check cache first
-        const today = new Date().toLocaleDateString('en-CA', {
-          timeZone: 'America/New_York',
-        })
-        const cachedData = localStorage.getItem('apod_cache')
-        const cachedDate = localStorage.getItem('apod_date')
-
-        if (cachedData && cachedDate === today) {
-          console.log('Using cached APOD')
-          setComparisonData(JSON.parse(cachedData))
-          return
-        }
-
-        const apiKey =
-          import.meta.env.NASA_API_KEY ||
-          import.meta.env.VITE_NASA_API_KEY ||
-          'DEMO_KEY'
-        const response = await fetch(
-          `https://api.nasa.gov/planetary/apod?api_key=${apiKey}`
-        )
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
-        }
-
-        const data = await response.json()
-
-        if (data.media_type !== 'image' || !data.url) {
-          throw new Error('APOD is not an image today')
-        }
-
-        const apodData = {
-          before: data.url,
-          after: data.url,
-          isDemo: true,
-          beforeLabel: 'Original (3.2 MB)',
-          afterLabel: 'Compressed (1 MB)',
-        }
-
-        setComparisonData(apodData)
-
-        // cache for today
-        localStorage.setItem('apod_cache', JSON.stringify(apodData))
-        localStorage.setItem('apod_date', today)
-        console.log('Loaded fresh APOD:', data.title)
-      } catch (err) {
-        console.error('Failed to fetch NASA APOD:', err)
-
-        const cachedData = localStorage.getItem('apod_cache')
-        if (cachedData) {
-          console.log('Using previous APOD from cache')
-          setComparisonData(JSON.parse(cachedData))
-          return
-        }
-
-        setComparisonData({
-          before:
-            'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop',
-          after:
-            'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop',
-          isDemo: true,
-          beforeLabel: 'Original (3.2 MB)',
-          afterLabel: 'Compressed (1 MB)',
-        })
-      }
-    }
-
-    fetchAPOD()
+    loadAPOD()
   }, [])
 
   // update preview when file changes
@@ -373,9 +371,7 @@ export default function UploadForm({ file, onFileChange }) {
                 let val = parseFloat(sizeValue)
                 const limit = sizeUnit === 'MB' ? 1 : 1024
 
-                if (isNaN(val)) val = limit // Default to limit if invalid
-
-                // Clamp value
+                if (isNaN(val)) val = limit
                 if (val > limit) val = limit
                 if (val < 0.1) val = 0.1
 
@@ -398,7 +394,6 @@ export default function UploadForm({ file, onFileChange }) {
                   type="button"
                   onClick={() => {
                     setSizeUnit(unit)
-                    // Adjust value if it exceeds new limit
                     const val = parseFloat(sizeValue)
                     if (unit === 'MB' && val > 1) {
                       setSizeValue('1')
@@ -497,14 +492,8 @@ export default function UploadForm({ file, onFileChange }) {
           <ComparisonSlider
             before={comparisonData.before}
             after={comparisonData.after}
-            labelBefore={
-              comparisonData.beforeLabel ||
-              (comparisonData.isDemo ? 'Original' : 'Original')
-            }
-            labelAfter={
-              comparisonData.afterLabel ||
-              (comparisonData.isDemo ? 'Compressed (Simulated)' : 'Compressed')
-            }
+            labelBefore={comparisonData.beforeLabel || 'Original'}
+            labelAfter={comparisonData.afterLabel || 'Compressed'}
           />
         </div>
       )}
@@ -513,42 +502,69 @@ export default function UploadForm({ file, onFileChange }) {
       {result && (
         <div className="p-6 border border-[var(--glass-border)] border-t-[var(--glass-highlight)] border-l-[var(--glass-highlight)] rounded-2xl bg-[var(--glass-bg)] backdrop-blur-xl shadow-[var(--shadow-color)] text-[var(--text-primary)] animate-scale-in ring-1 ring-[var(--glass-border)]">
           {/* Success Header */}
-          <div className="flex items-center gap-3 mb-5 pb-4 border-b border-[var(--glass-border)]">
-            <div className="w-10 h-10 rounded-full bg-green-500/10 backdrop-blur-sm flex items-center justify-center ring-1 ring-green-400/30 animate-pulse">
+          <div className="flex items-center justify-between gap-3 mb-5 pb-4 border-b border-[var(--glass-border)]">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-green-500/10 backdrop-blur-sm flex items-center justify-center ring-1 ring-green-400/30 animate-pulse">
+                <svg
+                  className="w-6 h-6 text-green-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  style={{
+                    filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.8))',
+                  }}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2.5}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h3
+                  className="font-bold text-[var(--text-primary)] text-lg"
+                  style={{
+                    textShadow:
+                      '0 2px 8px rgba(0,0,0,0.8), 0 0 2px rgba(0,0,0,0.8)',
+                  }}
+                >
+                  Compression Complete
+                </h3>
+                <p
+                  className="text-xs text-[var(--text-primary)] mt-0.5"
+                  style={{ textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}
+                >
+                  Your image is ready to download
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                setResult(null)
+                if (fileInputRef.current) {
+                  fileInputRef.current.value = ''
+                }
+                loadAPOD()
+              }}
+              className="p-2 rounded-full hover:bg-[var(--glass-highlight)] transition-colors duration-200 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              aria-label="Close"
+            >
               <svg
-                className="w-6 h-6 text-green-400"
+                className="w-5 h-5"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
-                style={{
-                  filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.8))',
-                }}
               >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  strokeWidth={2.5}
-                  d="M5 13l4 4L19 7"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
                 />
               </svg>
-            </div>
-            <div>
-              <h3
-                className="font-bold text-[var(--text-primary)] text-lg"
-                style={{
-                  textShadow:
-                    '0 2px 8px rgba(0,0,0,0.8), 0 0 2px rgba(0,0,0,0.8)',
-                }}
-              >
-                Compression Complete
-              </h3>
-              <p
-                className="text-xs text-[var(--text-primary)] mt-0.5"
-                style={{ textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}
-              >
-                Your image is ready to download
-              </p>
-            </div>
+            </button>
           </div>
 
           {/* Compression Stats Banner */}
