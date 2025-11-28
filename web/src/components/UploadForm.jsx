@@ -49,10 +49,17 @@ export default function UploadForm({ file, onFileChange }) {
       })
       const cachedData = localStorage.getItem('apod_cache')
       const cachedDate = localStorage.getItem('apod_date')
+      const cachedTimestamp = localStorage.getItem('apod_timestamp')
 
-      if (cachedData && cachedDate === today) {
-        setComparisonData(JSON.parse(cachedData))
-        return
+      // use cache if it's from today and less than 1 hour old
+      if (cachedData && cachedDate === today && cachedTimestamp) {
+        const cacheAge = Date.now() - parseInt(cachedTimestamp)
+        const oneHour = 60 * 60 * 1000
+
+        if (cacheAge < oneHour) {
+          setComparisonData(JSON.parse(cachedData))
+          return
+        }
       }
 
       const apiKey =
@@ -73,6 +80,7 @@ export default function UploadForm({ file, onFileChange }) {
         throw new Error('APOD is not an image today')
       }
 
+      // prepare APOD data
       const apodData = {
         before: data.url,
         after: data.url,
@@ -83,9 +91,10 @@ export default function UploadForm({ file, onFileChange }) {
 
       setComparisonData(apodData)
 
-      // cache for today
+      // cache for today with timestamp
       localStorage.setItem('apod_cache', JSON.stringify(apodData))
       localStorage.setItem('apod_date', today)
+      localStorage.setItem('apod_timestamp', Date.now().toString())
     } catch (err) {
       console.error('Failed to fetch NASA APOD:', err)
 
