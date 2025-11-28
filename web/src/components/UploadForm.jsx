@@ -3,6 +3,8 @@ import Spinner from './Spinner'
 import ComparisonSlider from './ComparisonSlider'
 
 // UploadForm() - image upload and compression form component
+/* file - the selected file to compress
+   onFileChange - callback function to handle file selection */
 export default function UploadForm({ file, onFileChange }) {
   // formatBytes() - formats bytes to appropriate unit
   const formatBytes = (bytes, decimals = 2, forceUnit = null) => {
@@ -39,6 +41,45 @@ export default function UploadForm({ file, onFileChange }) {
   const [comparisonData, setComparisonData] = useState(null)
   const [copied, setCopied] = useState(false)
   const fileInputRef = React.useRef(null)
+  const intervalRef = React.useRef(null)
+
+  // startChanging() - starts continuous value update
+  // direction: 1 for increase, -1 for decrease
+  const startChanging = (direction) => {
+    updateValue(direction)
+
+    if (intervalRef.current) clearInterval(intervalRef.current)
+
+    intervalRef.current = setInterval(() => {
+      updateValue(direction)
+    }, 250)
+  }
+
+  // stopChanging() - stops continuous value update
+  const stopChanging = () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current)
+      intervalRef.current = null
+    }
+  }
+
+  // updateValue() - helper to update size value
+  // direction: 1 for increase, -1 for decrease
+  const updateValue = (direction) => {
+    setSizeValue((prev) => {
+      let val = parseFloat(prev) || 0
+      const isMB = sizeUnit === 'MB'
+      const step = isMB ? 0.1 : 10
+      const max = isMB ? 1 : 1024
+      const min = isMB ? 0.1 : 10
+
+      let newVal = val + direction * step
+      if (newVal > max) newVal = max
+      if (newVal < min) newVal = min
+
+      return isMB ? newVal.toFixed(1) : String(Math.round(newVal))
+    })
+  }
 
   // loadAPOD() - fetches or loads cached APOD data
   const loadAPOD = async () => {
@@ -76,6 +117,7 @@ export default function UploadForm({ file, onFileChange }) {
 
       const data = await response.json()
 
+      // validate APOD data
       if (data.media_type !== 'image' || !data.url) {
         throw new Error('APOD is not an image today')
       }
@@ -104,6 +146,7 @@ export default function UploadForm({ file, onFileChange }) {
         return
       }
 
+      // fallback image
       setComparisonData({
         before:
           'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop',
@@ -168,6 +211,7 @@ export default function UploadForm({ file, onFileChange }) {
   }
 
   // onSubmit() - handles form submission
+  // e - event object from form submission
   async function onSubmit(e) {
     e.preventDefault()
     setError(null)
@@ -370,24 +414,75 @@ export default function UploadForm({ file, onFileChange }) {
       {/* Form Controls */}
       <div className="grid grid-cols-2 gap-6">
         <label className="block text-sm font-semibold text-white drop-shadow-sm ml-1">
-          Max size
+          Max Size
           <div className="flex gap-2 mt-2">
-            <input
-              type="number"
-              value={sizeValue}
-              onChange={(e) => setSizeValue(e.target.value)}
-              onBlur={() => {
-                let val = parseFloat(sizeValue)
-                const limit = sizeUnit === 'MB' ? 1 : 1024
+            <div className="relative flex-1 group">
+              <input
+                type="number"
+                value={sizeValue}
+                onChange={(e) => setSizeValue(e.target.value)}
+                onBlur={() => {
+                  let val = parseFloat(sizeValue)
+                  const isMB = sizeUnit === 'MB'
+                  const max = isMB ? 1 : 1024
+                  const min = isMB ? 0.1 : 10
 
-                if (isNaN(val)) val = limit
-                if (val > limit) val = limit
-                if (val < 0.1) val = 0.1
+                  if (isNaN(val)) val = max
+                  if (val > max) val = max
+                  if (val < min) val = min
 
-                setSizeValue(String(val))
-              }}
-              className="block w-full bg-[var(--input-bg)] backdrop-blur-xl border border-[var(--glass-border)] rounded-xl px-4 py-3 text-[var(--text-primary)] placeholder-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--glass-border)] focus:border-[var(--glass-highlight)] transition-all duration-300 ease-out hover:bg-[var(--glass-highlight)] focus:bg-[var(--glass-highlight)] shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)]"
-            />
+                  // Format to remove unnecessary decimals for KB
+                  setSizeValue(isMB ? String(val) : String(Math.round(val)))
+                }}
+                className="block w-full h-full bg-[var(--input-bg)] backdrop-blur-xl border border-[var(--glass-border)] rounded-xl pl-4 pr-10 py-3 text-[var(--text-primary)] placeholder-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--glass-border)] focus:border-[var(--glass-highlight)] transition-all duration-300 ease-out hover:bg-[var(--glass-highlight)] focus:bg-[var(--glass-highlight)] shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)] no-spinner"
+              />
+              {/* Custom Spin Buttons */}
+              <div className="absolute right-1 top-1 bottom-1 flex flex-col w-8 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <button
+                  type="button"
+                  onMouseDown={() => startChanging(1)}
+                  onMouseUp={stopChanging}
+                  onMouseLeave={stopChanging}
+                  className="flex-1 flex items-center justify-center hover:bg-[var(--glass-highlight)] rounded-t-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                >
+                  <svg
+                    className="w-3 h-3"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2.5}
+                      d="M5 15l7-7 7 7"
+                    />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  onMouseDown={() => startChanging(-1)}
+                  onMouseUp={stopChanging}
+                  onMouseLeave={stopChanging}
+                  className="flex-1 flex items-center justify-center hover:bg-[var(--glass-highlight)] rounded-b-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                >
+                  <svg
+                    className="w-3 h-3"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2.5}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
             <div className="relative flex bg-[var(--input-bg)] p-1 rounded-xl backdrop-blur-md border border-[var(--glass-border)] shadow-inner transition-all duration-300 ease-out">
               {/* Sliding background */}
               <div
@@ -404,8 +499,13 @@ export default function UploadForm({ file, onFileChange }) {
                   onClick={() => {
                     setSizeUnit(unit)
                     const val = parseFloat(sizeValue)
-                    if (unit === 'MB' && val > 1) {
-                      setSizeValue('1')
+                    // Auto-adjust value when switching units if out of bounds
+                    if (unit === 'MB') {
+                      if (val > 1) setSizeValue('1')
+                      if (val <= 0) setSizeValue('0.1')
+                    } else {
+                      if (val > 1024) setSizeValue('1024')
+                      if (val < 10) setSizeValue('10')
                     }
                   }}
                   className={`
