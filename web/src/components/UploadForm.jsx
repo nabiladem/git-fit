@@ -3,6 +3,8 @@ import Spinner from './Spinner'
 import ComparisonSlider from './ComparisonSlider'
 
 // UploadForm() - image upload and compression form component
+/* file - the selected file to compress
+   onFileChange - callback function to handle file selection */
 export default function UploadForm({ file, onFileChange }) {
   // formatBytes() - formats bytes to appropriate unit
   const formatBytes = (bytes, decimals = 2, forceUnit = null) => {
@@ -39,79 +41,127 @@ export default function UploadForm({ file, onFileChange }) {
   const [comparisonData, setComparisonData] = useState(null)
   const [copied, setCopied] = useState(false)
   const fileInputRef = React.useRef(null)
+  const intervalRef = React.useRef(null)
+
+  // startChanging() - starts continuous value update
+  // direction: 1 for increase, -1 for decrease
+  const startChanging = (direction) => {
+    updateValue(direction)
+
+    if (intervalRef.current) window.clearInterval(intervalRef.current)
+
+    intervalRef.current = window.setInterval(() => {
+      updateValue(direction)
+    }, 250)
+  }
+
+  // stopChanging() - stops continuous value update
+  const stopChanging = () => {
+    if (intervalRef.current) {
+      window.clearInterval(intervalRef.current)
+      intervalRef.current = null
+    }
+  }
+
+  // updateValue() - helper to update size value
+  // direction: 1 for increase, -1 for decrease
+  const updateValue = (direction) => {
+    setSizeValue((prev) => {
+      let val = parseFloat(prev) || 0
+      const isMB = sizeUnit === 'MB'
+      const step = isMB ? 0.1 : 10
+      const max = isMB ? 1 : 1024
+      const min = isMB ? 0.1 : 10
+
+      let newVal = val + direction * step
+      if (newVal > max) newVal = max
+      if (newVal < min) newVal = min
+
+      return isMB ? newVal.toFixed(1) : String(Math.round(newVal))
+    })
+  }
+
+  // loadAPOD() - fetches or loads cached APOD data
+  const loadAPOD = async () => {
+    try {
+      // check cache first
+      const today = new Date().toLocaleDateString('en-CA', {
+        timeZone: 'America/New_York',
+      })
+      const cachedData = localStorage.getItem('apod_cache')
+      const cachedDate = localStorage.getItem('apod_date')
+      const cachedTimestamp = localStorage.getItem('apod_timestamp')
+
+      // use cache if it's from today and less than 1 hour old
+      if (cachedData && cachedDate === today && cachedTimestamp) {
+        const cacheAge = Date.now() - parseInt(cachedTimestamp)
+        const oneHour = 60 * 60 * 1000
+
+        if (cacheAge < oneHour) {
+          setComparisonData(JSON.parse(cachedData))
+          return
+        }
+      }
+
+      const apiKey =
+        import.meta.env.NASA_API_KEY ||
+        import.meta.env.VITE_NASA_API_KEY ||
+        'DEMO_KEY'
+      const response = await fetch(
+        `https://api.nasa.gov/planetary/apod?api_key=${apiKey}`
+      )
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+
+      // validate APOD data
+      if (data.media_type !== 'image' || !data.url) {
+        throw new Error('APOD is not an image today')
+      }
+
+      // prepare APOD data
+      const apodData = {
+        before: data.url,
+        after: data.url,
+        isDemo: true,
+        beforeLabel: 'Original (3.2 MB)',
+        afterLabel: 'Compressed (1 MB)',
+      }
+
+      setComparisonData(apodData)
+
+      // cache for today with timestamp
+      localStorage.setItem('apod_cache', JSON.stringify(apodData))
+      localStorage.setItem('apod_date', today)
+      localStorage.setItem('apod_timestamp', Date.now().toString())
+    } catch (err) {
+      console.error('Failed to fetch NASA APOD:', err)
+
+      const cachedData = localStorage.getItem('apod_cache')
+      if (cachedData) {
+        setComparisonData(JSON.parse(cachedData))
+        return
+      }
+
+      // fallback image
+      setComparisonData({
+        before:
+          'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop',
+        after:
+          'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop',
+        isDemo: true,
+        beforeLabel: 'Original (3.2 MB)',
+        afterLabel: 'Compressed (1 MB)',
+      })
+    }
+  }
 
   // fetch NASA APOD with caching
   useEffect(() => {
-    const fetchAPOD = async () => {
-      try {
-        // check cache first
-        const today = new Date().toLocaleDateString('en-CA', {
-          timeZone: 'America/New_York',
-        })
-        const cachedData = localStorage.getItem('apod_cache')
-        const cachedDate = localStorage.getItem('apod_date')
-
-        if (cachedData && cachedDate === today) {
-          console.log('Using cached APOD')
-          setComparisonData(JSON.parse(cachedData))
-          return
-        }
-
-        const apiKey =
-          import.meta.env.NASA_API_KEY ||
-          import.meta.env.VITE_NASA_API_KEY ||
-          'DEMO_KEY'
-        const response = await fetch(
-          `https://api.nasa.gov/planetary/apod?api_key=${apiKey}`
-        )
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
-        }
-
-        const data = await response.json()
-
-        if (data.media_type !== 'image' || !data.url) {
-          throw new Error('APOD is not an image today')
-        }
-
-        const apodData = {
-          before: data.url,
-          after: data.url,
-          isDemo: true,
-          beforeLabel: 'Original (3.2 MB)',
-          afterLabel: 'Compressed (1 MB)',
-        }
-
-        setComparisonData(apodData)
-
-        // cache for today
-        localStorage.setItem('apod_cache', JSON.stringify(apodData))
-        localStorage.setItem('apod_date', today)
-        console.log('Loaded fresh APOD:', data.title)
-      } catch (err) {
-        console.error('Failed to fetch NASA APOD:', err)
-
-        const cachedData = localStorage.getItem('apod_cache')
-        if (cachedData) {
-          console.log('Using previous APOD from cache')
-          setComparisonData(JSON.parse(cachedData))
-          return
-        }
-
-        setComparisonData({
-          before:
-            'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop',
-          after:
-            'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop',
-          isDemo: true,
-          beforeLabel: 'Original (3.2 MB)',
-          afterLabel: 'Compressed (1 MB)',
-        })
-      }
-    }
-
-    fetchAPOD()
+    loadAPOD()
   }, [])
 
   // update preview when file changes
@@ -161,6 +211,7 @@ export default function UploadForm({ file, onFileChange }) {
   }
 
   // onSubmit() - handles form submission
+  // e - event object from form submission
   async function onSubmit(e) {
     e.preventDefault()
     setError(null)
@@ -363,26 +414,75 @@ export default function UploadForm({ file, onFileChange }) {
       {/* Form Controls */}
       <div className="grid grid-cols-2 gap-6">
         <label className="block text-sm font-semibold text-white drop-shadow-sm ml-1">
-          Max size
+          Max Size
           <div className="flex gap-2 mt-2">
-            <input
-              type="number"
-              value={sizeValue}
-              onChange={(e) => setSizeValue(e.target.value)}
-              onBlur={() => {
-                let val = parseFloat(sizeValue)
-                const limit = sizeUnit === 'MB' ? 1 : 1024
+            <div className="relative flex-1 group">
+              <input
+                type="number"
+                value={sizeValue}
+                onChange={(e) => setSizeValue(e.target.value)}
+                onBlur={() => {
+                  let val = parseFloat(sizeValue)
+                  const isMB = sizeUnit === 'MB'
+                  const max = isMB ? 1 : 1024
+                  const min = isMB ? 0.1 : 10
 
-                if (isNaN(val)) val = limit // Default to limit if invalid
+                  if (isNaN(val)) val = max
+                  if (val > max) val = max
+                  if (val < min) val = min
 
-                // Clamp value
-                if (val > limit) val = limit
-                if (val < 0.1) val = 0.1
+                  // Format to remove unnecessary decimals for KB
+                  setSizeValue(isMB ? String(val) : String(Math.round(val)))
+                }}
+                className="block w-full h-full bg-[var(--input-bg)] backdrop-blur-xl border border-[var(--glass-border)] rounded-xl pl-4 pr-10 py-3 text-[var(--text-primary)] placeholder-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--glass-border)] focus:border-[var(--glass-highlight)] transition-all duration-300 ease-out hover:bg-[var(--glass-highlight)] focus:bg-[var(--glass-highlight)] shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)] no-spinner"
+              />
+              {/* Custom Spin Buttons */}
+              <div className="absolute right-1 top-1 bottom-1 flex flex-col w-8 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <button
+                  type="button"
+                  onMouseDown={() => startChanging(1)}
+                  onMouseUp={stopChanging}
+                  onMouseLeave={stopChanging}
+                  className="flex-1 flex items-center justify-center hover:bg-[var(--glass-highlight)] rounded-t-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                >
+                  <svg
+                    className="w-3 h-3"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2.5}
+                      d="M5 15l7-7 7 7"
+                    />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  onMouseDown={() => startChanging(-1)}
+                  onMouseUp={stopChanging}
+                  onMouseLeave={stopChanging}
+                  className="flex-1 flex items-center justify-center hover:bg-[var(--glass-highlight)] rounded-b-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                >
+                  <svg
+                    className="w-3 h-3"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2.5}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
 
-                setSizeValue(String(val))
-              }}
-              className="block w-full bg-[var(--input-bg)] backdrop-blur-xl border border-[var(--glass-border)] rounded-xl px-4 py-3 text-[var(--text-primary)] placeholder-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--glass-border)] focus:border-[var(--glass-highlight)] transition-all duration-300 ease-out hover:bg-[var(--glass-highlight)] focus:bg-[var(--glass-highlight)] shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)]"
-            />
             <div className="relative flex bg-[var(--input-bg)] p-1 rounded-xl backdrop-blur-md border border-[var(--glass-border)] shadow-inner transition-all duration-300 ease-out">
               {/* Sliding background */}
               <div
@@ -398,10 +498,14 @@ export default function UploadForm({ file, onFileChange }) {
                   type="button"
                   onClick={() => {
                     setSizeUnit(unit)
-                    // Adjust value if it exceeds new limit
                     const val = parseFloat(sizeValue)
-                    if (unit === 'MB' && val > 1) {
-                      setSizeValue('1')
+                    // Auto-adjust value when switching units if out of bounds
+                    if (unit === 'MB') {
+                      if (val > 1) setSizeValue('1')
+                      if (val <= 0) setSizeValue('0.1')
+                    } else {
+                      if (val > 1024) setSizeValue('1024')
+                      if (val < 10) setSizeValue('10')
                     }
                   }}
                   className={`
@@ -497,14 +601,8 @@ export default function UploadForm({ file, onFileChange }) {
           <ComparisonSlider
             before={comparisonData.before}
             after={comparisonData.after}
-            labelBefore={
-              comparisonData.beforeLabel ||
-              (comparisonData.isDemo ? 'Original' : 'Original')
-            }
-            labelAfter={
-              comparisonData.afterLabel ||
-              (comparisonData.isDemo ? 'Compressed (Simulated)' : 'Compressed')
-            }
+            labelBefore={comparisonData.beforeLabel || 'Original'}
+            labelAfter={comparisonData.afterLabel || 'Compressed'}
           />
         </div>
       )}
@@ -513,42 +611,69 @@ export default function UploadForm({ file, onFileChange }) {
       {result && (
         <div className="p-6 border border-[var(--glass-border)] border-t-[var(--glass-highlight)] border-l-[var(--glass-highlight)] rounded-2xl bg-[var(--glass-bg)] backdrop-blur-xl shadow-[var(--shadow-color)] text-[var(--text-primary)] animate-scale-in ring-1 ring-[var(--glass-border)]">
           {/* Success Header */}
-          <div className="flex items-center gap-3 mb-5 pb-4 border-b border-[var(--glass-border)]">
-            <div className="w-10 h-10 rounded-full bg-green-500/10 backdrop-blur-sm flex items-center justify-center ring-1 ring-green-400/30 animate-pulse">
+          <div className="flex items-center justify-between gap-3 mb-5 pb-4 border-b border-[var(--glass-border)]">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-green-500/10 backdrop-blur-sm flex items-center justify-center ring-1 ring-green-400/30 animate-pulse">
+                <svg
+                  className="w-6 h-6 text-green-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  style={{
+                    filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.8))',
+                  }}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2.5}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h3
+                  className="font-bold text-[var(--text-primary)] text-lg"
+                  style={{
+                    textShadow:
+                      '0 2px 8px rgba(0,0,0,0.8), 0 0 2px rgba(0,0,0,0.8)',
+                  }}
+                >
+                  Compression Complete
+                </h3>
+                <p
+                  className="text-xs text-[var(--text-primary)] mt-0.5"
+                  style={{ textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}
+                >
+                  Your image is ready to download
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                setResult(null)
+                if (fileInputRef.current) {
+                  fileInputRef.current.value = ''
+                }
+                loadAPOD()
+              }}
+              className="p-2 rounded-full hover:bg-[var(--glass-highlight)] transition-colors duration-200 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              aria-label="Close"
+            >
               <svg
-                className="w-6 h-6 text-green-400"
+                className="w-5 h-5"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
-                style={{
-                  filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.8))',
-                }}
               >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  strokeWidth={2.5}
-                  d="M5 13l4 4L19 7"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
                 />
               </svg>
-            </div>
-            <div>
-              <h3
-                className="font-bold text-[var(--text-primary)] text-lg"
-                style={{
-                  textShadow:
-                    '0 2px 8px rgba(0,0,0,0.8), 0 0 2px rgba(0,0,0,0.8)',
-                }}
-              >
-                Compression Complete
-              </h3>
-              <p
-                className="text-xs text-[var(--text-primary)] mt-0.5"
-                style={{ textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}
-              >
-                Your image is ready to download
-              </p>
-            </div>
+            </button>
           </div>
 
           {/* Compression Stats Banner */}

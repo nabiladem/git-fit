@@ -17,8 +17,7 @@ export default function App() {
     setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))
   }
 
-  // handle file selection in UploadForm
-  // e - event object from file input change
+  // handle file selection in UploadForm; e - event object from file input change
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0]
     setFile(selectedFile)

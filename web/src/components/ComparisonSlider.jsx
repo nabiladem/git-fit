@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react'
 
 // ComparisonSlider() - comparison slider component
-/* before (string): path to before image; after (string): path to after image; labelBefore (string): label for before image; labelAfter (string): label for after image */
+/* before (string) - path to before image; after (string) - path to after image; labelBefore (string) - label for before image; labelAfter (string) - label for after image */
 export default function ComparisonSlider({
   before,
   after,
-  labelBefore = 'Before',
-  labelAfter = 'After',
+  labelBefore,
+  labelAfter,
 }) {
   const [sliderPosition, setSliderPosition] = useState(50)
   const [isDragging, setIsDragging] = useState(false)
@@ -24,7 +24,6 @@ export default function ComparisonSlider({
         setContainerWidth(containerRef.current.offsetWidth)
       }
     }
-
     window.addEventListener('resize', handleResize)
 
     return () => window.removeEventListener('resize', handleResize)
@@ -32,7 +31,8 @@ export default function ComparisonSlider({
 
   // reset slider position when images change
   useEffect(() => {
-    Promise.resolve().then(() => setSliderPosition(50))
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSliderPosition(50)
   }, [before, after])
 
   // handle slider movement
