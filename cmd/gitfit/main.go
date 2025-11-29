@@ -56,7 +56,7 @@ func parseFlags() *Config {
 	outputFormat := flag.String("format", "", "Output image format (jpeg, png, or gif)")
 	quality := flag.Int("quality", 85, "JPEG compression quality (1-100; 85 by default)")
 	verbose := flag.Bool("v", false, "Verbose logging enabled")
-uploadGravatar := flag.Bool("upload-gravatar", false, "Upload compressed image to Gravatar")
+	// uploadGravatar := flag.Bool("upload-gravatar", false, "Upload compressed image to Gravatar")
 
     // custom usage message for flags
 	flag.Usage = func() {
