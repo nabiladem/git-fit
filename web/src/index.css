@@ -180,5 +180,6 @@ input[type='range']::-webkit-slider-runnable-track {
 
   .no-spinner {
     -moz-appearance: textfield;
+    appearance: textfield;
   }
 }
