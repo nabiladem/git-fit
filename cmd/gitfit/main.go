@@ -1,12 +1,14 @@
 package main
 
 import (
-	"flag"
-	"fmt"
-	"github.com/nabiladem/git-fit/internal/compressor"
-	"os"
-	"path/filepath"
-	"strings"
+"flag"
+"fmt"
+"os"
+"path/filepath"
+"strings"
+
+"github.com/nabiladem/git-fit/internal/compressor"
+"github.com/nabiladem/git-fit/internal/gravatar"
 )
 
 // Config holds parsed command-line options
@@ -14,14 +16,14 @@ import (
    MaxSize (int) - maximum size of the image in bytes; OutputFormat (string) - jpeg, png, or gif
    Quality (int) - quality for JPEG compression; Verbose (bool) - enable verbose logging */
 type Config struct {
-	InputPath    string
-	OutputPath   string
-	MaxSize      int
-	OutputFormat string
-	Quality      int
-	Verbose      bool
+	InputPath      string
+	OutputPath     string
+	MaxSize        int
+	OutputFormat   string
+	Quality        int
+	Verbose        bool
+	UploadGravatar bool
 }
-
 // main() - entry point
 func main() {
 	cfg := parseFlags()
@@ -54,6 +56,7 @@ func parseFlags() *Config {
 	outputFormat := flag.String("format", "", "Output image format (jpeg, png, or gif)")
 	quality := flag.Int("quality", 85, "JPEG compression quality (1-100; 85 by default)")
 	verbose := flag.Bool("v", false, "Verbose logging enabled")
+uploadGravatar := flag.Bool("upload-gravatar", false, "Upload compressed image to Gravatar")
 
     // custom usage message for flags
 	flag.Usage = func() {
@@ -134,7 +137,56 @@ func validateConfig(cfg *Config) (bool, error) {
 
 // runCompress() - call the compressor with the provided Config
 /* cfg (*Config) - configuration for compression */
+// runCompress() - call the compressor with the provided Config
+/* cfg (*Config) - configuration for compression */
 func runCompress(cfg *Config) error {
-	return compressor.CompressImage(cfg.InputPath, cfg.OutputPath, cfg.MaxSize,
-                                     cfg.OutputFormat, cfg.Quality, cfg.Verbose)
+	err := compressor.CompressImage(cfg.InputPath, cfg.OutputPath, cfg.MaxSize,
+cfg.OutputFormat, cfg.Quality, cfg.Verbose)
+	if err != nil {
+		return err
+	}
+
+	if cfg.UploadGravatar {
+		if cfg.Verbose {
+			fmt.Println("Uploading to Gravatar...")
+		}
+
+		// Load OAuth credentials from environment
+		clientID := os.Getenv("GRAVATAR_CLIENT_ID")
+		clientSecret := os.Getenv("GRAVATAR_CLIENT_SECRET")
+		redirectURI := os.Getenv("GRAVATAR_REDIRECT_URI")
+
+		if clientID == "" || clientSecret == "" {
+			return fmt.Errorf("GRAVATAR_CLIENT_ID and GRAVATAR_CLIENT_SECRET environment variables must be set")
+		}
+
+		// Use default redirect URI if not specified
+		if redirectURI == "" {
+			redirectURI = "http://localhost:8080/callback"
+		}
+
+		// Create OAuth client
+		client := gravatar.NewClient(clientID, clientSecret, redirectURI, cfg.Verbose)
+
+		// Perform OAuth authentication
+		if cfg.Verbose {
+			fmt.Println("Starting OAuth authentication...")
+			fmt.Println("Your browser will open for authorization.")
+		}
+
+		if err := client.Authenticate(); err != nil {
+			return fmt.Errorf("OAuth authentication failed: %v", err)
+		}
+
+		// Upload avatar
+		if err := client.UploadAvatar(cfg.OutputPath); err != nil {
+			return fmt.Errorf("failed to upload to Gravatar: %v", err)
+		}
+
+		if cfg.Verbose {
+			fmt.Println("Successfully uploaded to Gravatar!")
+		}
+	}
+
+	return nil
 }
