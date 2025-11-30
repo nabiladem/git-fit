@@ -51,8 +51,19 @@ func (c *Client) UploadAvatar(imagePath string) error {
 		return fmt.Errorf("not authenticated - call Authenticate() first")
 	}
 
+	// Gravatar requires square images - crop if necessary
+	squareImagePath, err := cropToSquare(imagePath)
+	if err != nil {
+		return fmt.Errorf("failed to crop image to square: %v", err)
+	}
+
+	// Clean up temporary square image if it's different from original
+	if squareImagePath != imagePath {
+		defer os.Remove(squareImagePath)
+	}
+
 	// Open the image file
-	file, err := os.Open(imagePath)
+	file, err := os.Open(squareImagePath)
 	if err != nil {
 		return fmt.Errorf("failed to open image file: %v", err)
 	}
@@ -62,8 +73,8 @@ func (c *Client) UploadAvatar(imagePath string) error {
 	var requestBody bytes.Buffer
 	writer := multipart.NewWriter(&requestBody)
 
-	// Add the file to the form
-	part, err := writer.CreateFormFile("file", filepath.Base(imagePath))
+	// Add the file to the form with field name "image"
+	part, err := writer.CreateFormFile("image", filepath.Base(imagePath))
 	if err != nil {
 		return fmt.Errorf("failed to create form file: %v", err)
 	}
@@ -78,9 +89,9 @@ func (c *Client) UploadAvatar(imagePath string) error {
 		return fmt.Errorf("failed to close multipart writer: %v", err)
 	}
 
-	// Create the HTTP request
-	url := apiBaseURL + "/me/avatars"
-	req, err := http.NewRequest("POST", url, &requestBody)
+	// Create the HTTP request with select_avatar parameter
+	uploadURL := apiBaseURL + "/me/avatars?select_avatar=true"
+	req, err := http.NewRequest("POST", uploadURL, &requestBody)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %v", err)
 	}
