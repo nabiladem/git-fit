@@ -3,7 +3,7 @@
 .env
 
 # Binaries for programs and plugins
-gitfit
+/gitfit
 *.exe
 *.out
 *.test
@@ -22,3 +22,5 @@ gitfit-compressed-*.jpg
 # Logs and databases
 *.log
 coverage
+output.txt
+output_*.txt
