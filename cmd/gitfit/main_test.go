@@ -9,15 +9,239 @@ import (
 	"testing"
 )
 
-// helper to create a small JPEG file for tests
-func writeTestJPEG(path string, w, h, quality int) error {
-	img := image.NewRGBA(image.Rect(0, 0, w, h))
-	col := color.RGBA{R: 180, G: 120, B: 80, A: 255}
+// TestParseFlags() - tests the parseFlags function
+func TestParseFlags(t *testing.T) {
+	tests := []struct {
+		name     string
+		args     []string
+		expected Config
+	}{
+		{
+			name: "All Flags",
+			args: []string{
+				"-input", "in.jpg",
+				"-output", "out.jpg",
+				"-maxsize", "500",
+				"-format", "png",
+				"-quality", "90",
+				"-v",
+				"-upload-gravatar",
+			},
+			expected: Config{
+				InputPath:      "in.jpg",
+				OutputPath:     "out.jpg",
+				MaxSize:        500,
+				OutputFormat:   "png",
+				Quality:        90,
+				Verbose:        true,
+				UploadGravatar: true,
+			},
+		},
+		{
+			name: "Defaults",
+			args: []string{},
+			expected: Config{
+				MaxSize: 1048576,
+				Quality: 85,
+			},
+		},
+	}
 
-	// fill with solid color
-	for y := 0; y < h; y++ {
-		for x := 0; x < w; x++ {
-			img.Set(x, y, col)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := parseFlags(tt.args)
+			if cfg.InputPath != tt.expected.InputPath {
+				t.Errorf("expected InputPath %s, got %s", tt.expected.InputPath, cfg.InputPath)
+			}
+
+			if cfg.OutputPath != tt.expected.OutputPath {
+				t.Errorf("expected OutputPath %s, got %s", tt.expected.OutputPath, cfg.OutputPath)
+			}
+
+			if cfg.MaxSize != tt.expected.MaxSize {
+				t.Errorf("expected MaxSize %d, got %d", tt.expected.MaxSize, cfg.MaxSize)
+			}
+
+			if cfg.OutputFormat != tt.expected.OutputFormat {
+				t.Errorf("expected OutputFormat %s, got %s", tt.expected.OutputFormat, cfg.OutputFormat)
+			}
+
+			if cfg.Quality != tt.expected.Quality {
+				t.Errorf("expected Quality %d, got %d", tt.expected.Quality, cfg.Quality)
+			}
+
+			if cfg.Verbose != tt.expected.Verbose {
+				t.Errorf("expected Verbose %v, got %v", tt.expected.Verbose, cfg.Verbose)
+			}
+
+			if cfg.UploadGravatar != tt.expected.UploadGravatar {
+				t.Errorf("expected UploadGravatar %v, got %v", tt.expected.UploadGravatar, cfg.UploadGravatar)
+			}
+		})
+	}
+}
+
+// TestValidateConfig() - tests the validateConfig function
+func TestValidateConfig(t *testing.T) {
+	// create a dummy file for existence check
+	tmpFile, err := os.CreateTemp("", "test-image-*.jpg")
+	if err != nil {
+		t.Fatalf("failed to create temp file: %v", err)
+	}
+	defer os.Remove(tmpFile.Name())
+	tmpFile.Close()
+
+	tests := []struct {
+		name      string
+		cfg       Config
+		wantUsage bool
+		wantErr   bool
+	}{
+		{
+			name:      "Empty Paths",
+			cfg:       Config{},
+			wantUsage: true,
+			wantErr:   false,
+		},
+		{
+			name: "Missing Input",
+			cfg: Config{
+				OutputPath: "out.jpg",
+			},
+			wantUsage: false,
+			wantErr:   true,
+		},
+		{
+			name: "Missing Output",
+			cfg: Config{
+				InputPath: "in.jpg",
+			},
+			wantUsage: false,
+			wantErr:   true,
+		},
+		{
+			name: "Input Not Exist",
+			cfg: Config{
+				InputPath:  "nonexistent.jpg",
+				OutputPath: "out.jpg",
+			},
+			wantUsage: false,
+			wantErr:   true,
+		},
+		{
+			name: "Invalid MaxSize",
+			cfg: Config{
+				InputPath:  tmpFile.Name(),
+				OutputPath: "out.jpg",
+				MaxSize:    0,
+			},
+			wantUsage: false,
+			wantErr:   true,
+		},
+		{
+			name: "Invalid Quality",
+			cfg: Config{
+				InputPath:  tmpFile.Name(),
+				OutputPath: "out.jpg",
+				MaxSize:    100,
+				Quality:    101,
+			},
+			wantUsage: false,
+			wantErr:   true,
+		},
+		{
+			name: "Valid Config (Auto Format)",
+			cfg: Config{
+				InputPath:  tmpFile.Name(),
+				OutputPath: "out.jpg",
+				MaxSize:    100,
+				Quality:    80,
+			},
+			wantUsage: false,
+			wantErr:   false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			showUsage, err := validateConfig(&tt.cfg)
+			if showUsage != tt.wantUsage {
+				t.Errorf("expected showUsage %v, got %v", tt.wantUsage, showUsage)
+			}
+
+			if (err != nil) != tt.wantErr {
+				t.Errorf("expected error %v, got %v", tt.wantErr, err)
+			}
+			if !tt.wantErr && !tt.wantUsage && tt.cfg.OutputFormat == "" {
+				// Check if format was inferred
+				ext := filepath.Ext(tt.cfg.InputPath)
+				if ext == ".jpg" && tt.cfg.OutputFormat != "jpeg" {
+					t.Errorf("expected inferred format jpeg, got %s", tt.cfg.OutputFormat)
+				}
+			}
+		})
+	}
+}
+
+// TestRunCompress() - tests the runCompress function
+func TestRunCompress(t *testing.T) {
+	// Create a dummy image
+	tmpIn, err := os.CreateTemp("", "test-in-*.jpg")
+	if err != nil {
+		t.Fatalf("failed to create temp file: %v", err)
+	}
+	defer os.Remove(tmpIn.Name())
+
+	if err := createTestImage(tmpIn.Name(), 100, 100, "jpg"); err != nil {
+		t.Fatalf("failed to create test image: %v", err)
+	}
+	tmpIn.Close()
+
+	tmpOut, err := os.CreateTemp("", "test-out-*.jpg")
+	if err != nil {
+		t.Fatalf("failed to create temp file: %v", err)
+	}
+	defer os.Remove(tmpOut.Name())
+	tmpOut.Close()
+
+	cfg := &Config{
+		InputPath:    tmpIn.Name(),
+		OutputPath:   tmpOut.Name(),
+		MaxSize:      1024 * 1024,
+		OutputFormat: "jpeg",
+		Quality:      80,
+		Verbose:      true,
+	}
+
+	if err := runCompress(cfg); err != nil {
+		t.Fatalf("runCompress failed: %v", err)
+	}
+
+	// check if output exists and has content
+	info, err := os.Stat(tmpOut.Name())
+	if err != nil {
+		t.Fatalf("failed to stat output file: %v", err)
+	}
+
+	if info.Size() == 0 {
+		t.Error("output file is empty")
+	}
+
+	// test with mode Gravatar upload
+	cfg.UploadGravatar = true
+	
+	// ensure env vars are unset
+	os.Unsetenv("GRAVATAR_CLIENT_ID")
+	if err := runCompress(cfg); err == nil {
+		t.Error("expected error for missing env vars")
+	}
+}
+
+func createTestImage(path string, width, height int, format string) error {
+	img := image.NewRGBA(image.Rect(0, 0, width, height))
+	for y := 0; y < height; y++ {
+		for x := 0; x < width; x++ {
+			img.Set(x, y, color.RGBA{255, 0, 0, 255})
 		}
 	}
 
@@ -27,94 +251,20 @@ func writeTestJPEG(path string, w, h, quality int) error {
 	}
 	defer f.Close()
 
-	return jpeg.Encode(f, img, &jpeg.Options{Quality: quality})
+	return jpeg.Encode(f, img, nil)
 }
 
-// TestValidateConfig_ShowUsageWhenEmpty() - test that validateConfig signals to show usage when config is empty
-func TestValidateConfig_ShowUsageWhenEmpty(t *testing.T) {
-	cfg := &Config{}
-	show, err := validateConfig(cfg)
-	if !show || err != nil {
-		t.Fatalf("expected showUsage=true and err=nil for empty cfg; got show=%v err=%v", show, err)
-	}
-}
-
-// TestValidateConfig_MissingOneFlag() - test that validateConfig returns error when one of input/output is missing
-func TestValidateConfig_MissingOneFlag(t *testing.T) {
-	cfg := &Config{OutputPath: "out.jpg"}
-	show, err := validateConfig(cfg)
-	if show || err == nil {
-		t.Fatalf("expected showUsage=false and err!=nil when one of input/output is missing; got show=%v err=%v", show, err)
-	}
-}
-
-// TestValidateConfig_InputFileDoesNotExist() - test that validateConfig returns error when input file does not exist
-func TestValidateConfig_InputFileDoesNotExist(t *testing.T) {
-	cfg := &Config{InputPath: "no-such-file-xyz.jpg", OutputPath: "out.jpg"}
-	_, err := validateConfig(cfg)
-	if err == nil {
-		t.Fatalf("expected error for non-existent input file")
-	}
-}
-
-// TestValidateConfig_DefaultFormatAndExtension() - test that validateConfig sets default output format and appends extension
-func TestValidateConfig_DefaultFormatAndExtension(t *testing.T) {
-	td := t.TempDir()
-	in := filepath.Join(td, "in.png")
-
-	// create empty file to satisfy Stat
-	if err := os.WriteFile(in, []byte(""), 0644); err != nil {
-		t.Fatalf("failed to create input file: %v", err)
+// TestRunCompress_InvalidFile() - tests the runCompress function with an invalid input file
+func TestRunCompress_InvalidFile(t *testing.T) {
+	cfg := &Config{
+		InputPath:    "nonexistent.jpg",
+		OutputPath:   "out.jpg",
+		MaxSize:      1024,
+		OutputFormat: "jpeg",
+		Quality:      80,
 	}
 
-	out := filepath.Join(td, "out")
-	cfg := &Config{InputPath: in, OutputPath: out, OutputFormat: "", MaxSize: 1048576, Quality: 85}
-	show, err := validateConfig(cfg)
-	if show || err != nil {
-		t.Fatalf("unexpected validateConfig result: show=%v err=%v", show, err)
-	}
-
-	if cfg.OutputFormat != "png" {
-		t.Fatalf("expected OutputFormat=png, got %s", cfg.OutputFormat)
-	}
-}
-
-// TestValidateConfig_QualityRange() - test that validateConfig returns error for invalid quality range
-func TestValidateConfig_QualityRange(t *testing.T) {
-	td := t.TempDir()
-	in := filepath.Join(td, "in.jpg")
-	if err := writeTestJPEG(in, 20, 20, 80); err != nil {
-		t.Fatalf("failed to write in.jpg: %v", err)
-	}
-
-	cfg := &Config{InputPath: in, OutputPath: filepath.Join(td, "out.jpg"), Quality: 0}
-	_, err := validateConfig(cfg)
-	if err == nil {
-		t.Fatalf("expected error for invalid quality range")
-	}
-}
-
-// TestRunCompress_EndToEnd() - end-to-end test of runCompress()
-func TestRunCompress_EndToEnd(t *testing.T) {
-	td := t.TempDir()
-	in := filepath.Join(td, "in.jpg")
-	out := filepath.Join(td, "out.jpg")
-	if err := writeTestJPEG(in, 320, 240, 100); err != nil {
-		t.Fatalf("failed to write test jpeg: %v", err)
-	}
-
-	// run compression
-	cfg := &Config{InputPath: in, OutputPath: out, MaxSize: 5 * 1024 * 1024, OutputFormat: "jpeg", Quality: 90, Verbose: false}
-	if err := runCompress(cfg); err != nil {
-		t.Fatalf("runCompress failed: %v", err)
-	}
-
-	fi, err := os.Stat(out)
-	if err != nil {
-		t.Fatalf("expected output file, got error: %v", err)
-	}
-
-	if fi.Size() == 0 {
-		t.Fatalf("output file is empty")
+	if err := runCompress(cfg); err == nil {
+		t.Error("expected error for nonexistent input file")
 	}
 }

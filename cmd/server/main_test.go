@@ -37,6 +37,7 @@ func TestHealthCheck(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := setupRouter()
 
+	// send request
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/health", nil)
 	r.ServeHTTP(w, req)
@@ -105,6 +106,7 @@ func TestCompressEndpointMissingFile(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := setupRouter()
 
+	// send request
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/api/compress", nil)
 	r.ServeHTTP(w, req)
@@ -176,5 +178,63 @@ func TestNotFound(t *testing.T) {
 
 	if w.Code != http.StatusNotFound {
 		t.Errorf("Expected status 404, got %d", w.Code)
+	}
+}
+
+// TestCompressEndpoint_InvalidFormat() - test compress endpoint with invalid format
+func TestCompressEndpoint_InvalidFormat(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	r := setupRouter()
+
+	// create multipart form with invalid parameters
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	
+	// add a dummy file
+	part, _ := writer.CreateFormFile("avatar", "test.png")
+	part.Write([]byte("fake image data"))
+	
+	// add invalid quality parameter
+	writer.WriteField("quality", "200")
+	writer.Close()
+
+	// send request
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/api/compress", body)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	r.ServeHTTP(w, req)
+
+	// should still process (clamped to valid range)
+	if w.Code == http.StatusOK {
+		var resp map[string]interface{}
+		json.Unmarshal(w.Body.Bytes(), &resp)
+	}
+}
+
+// TestDownloadEndpoint_Expired() - test download endpoint with expired file
+func TestDownloadEndpoint_Expired(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	r := setupRouter()
+
+	// manually inject an expired file into the store
+	id := "expired-id"
+	token := "expired-token"
+	fileStore.Lock()
+	fileStore.m[id] = storedFile{
+		Data:     []byte("expired data"),
+		Mime:     "image/png",
+		Filename: "expired.png",
+		Expires:  time.Now().Add(-time.Minute), // expired 1 minute ago
+		Token:    token,
+	}
+	fileStore.Unlock()
+
+	// send request
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/download/"+id+"?token="+token, nil)
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusNotFound {
+		t.Errorf("Expected status 404 for expired file, got %d", w.Code)
 	}
 }

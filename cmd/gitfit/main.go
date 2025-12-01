@@ -27,7 +27,7 @@ type Config struct {
 
 // main() - entry point
 func main() {
-	cfg := parseFlags()
+	cfg := parseFlags(os.Args[1:])
 	showUsage, err := validateConfig(cfg)
 
 	if showUsage {
@@ -49,28 +49,29 @@ func main() {
 }
 
 // parseFlags() - extract flags into a Config struct
-func parseFlags() *Config {
+func parseFlags(args []string) *Config {
+	fs := flag.NewFlagSet("gitfit", flag.ExitOnError)
+
 	// define command-line flags
-	inputPath := flag.String("input", "", "Path to the input image file")
-	outputPath := flag.String("output", "", "Path to save the compressed image")
-	maxSize := flag.Int("maxsize", 1048576, "Maximum file size in bytes (default 1MB)")
-	outputFormat := flag.String("format", "", "Output image format (jpeg, png, or gif)")
-	quality := flag.Int("quality", 85, "JPEG compression quality (1-100; 85 by default)")
-	verbose := flag.Bool("v", false, "Verbose logging enabled")
-	uploadGravatar := flag.Bool("upload-gravatar", false, "Upload compressed image to Gravatar")
+	inputPath := fs.String("input", "", "Path to the input image file")
+	outputPath := fs.String("output", "", "Path to save the compressed image")
+	maxSize := fs.Int("maxsize", 1048576, "Maximum file size in bytes (default 1MB)")
+	outputFormat := fs.String("format", "", "Output image format (jpeg, png, or gif)")
+	quality := fs.Int("quality", 85, "JPEG compression quality (1-100; 85 by default)")
+	verbose := fs.Bool("v", false, "Verbose logging enabled")
+	uploadGravatar := fs.Bool("upload-gravatar", false, "Upload compressed image to Gravatar")
 
 	// custom usage message for flags
-	flag.Usage = func() {
+	fs.Usage = func() {
 		fmt.Println("Usage: gitfit -input <input-image-file> -output <output-image-file> -maxsize <max size in bytes> " +
 			"-format <jpeg|png|gif> -quality <0-100> -v [for verbose logging] -upload-gravatar [to upload to Gravatar]")
 		fmt.Println("Example: gitfit -input input.jpeg -output output.jpeg -maxsize 1000000 -format jpeg -quality 85 -v -upload-gravatar")
 		fmt.Println("Flags:")
-		flag.PrintDefaults()
+		fs.PrintDefaults()
 	}
 
-	flag.Parse()
+	fs.Parse(args)
 
-	// Config struct populated with flag values
 	return &Config{
 		InputPath:      *inputPath,
 		OutputPath:     *outputPath,
@@ -87,7 +88,6 @@ func parseFlags() *Config {
 func validateConfig(cfg *Config) (bool, error) {
 	// check if input and/or output path is missing
 	if cfg.InputPath == "" || cfg.OutputPath == "" {
-		// assume user knows about both flags if one is given
 		if cfg.InputPath == "" && cfg.OutputPath == "" {
 			return true, nil
 		}
