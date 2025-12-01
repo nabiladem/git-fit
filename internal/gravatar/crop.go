@@ -10,17 +10,15 @@ import (
 	"strings"
 )
 
-// cropToSquare - takes an image path and creates a square version by center-cropping
-// returns the path to the cropped image
+// cropToSquare() - takes an image path and creates a square version by center-cropping, returns the path to the cropped image
+// imagePath (string) - path to the image to crop
 func cropToSquare(imagePath string) (string, error) {
-	// Open the image
 	file, err := os.Open(imagePath)
 	if err != nil {
 		return "", fmt.Errorf("failed to open image: %v", err)
 	}
 	defer file.Close()
 
-	// Decode the image
 	img, format, err := image.Decode(file)
 	if err != nil {
 		return "", fmt.Errorf("failed to decode image: %v", err)
@@ -30,22 +28,22 @@ func cropToSquare(imagePath string) (string, error) {
 	width := bounds.Dx()
 	height := bounds.Dy()
 
-	// If already square, return original path
+	// if already square, return original path
 	if width == height {
 		return imagePath, nil
 	}
 
-	// Determine square size (use smaller dimension)
+	// determine square size (use smaller dimension)
 	size := width
 	if height < width {
 		size = height
 	}
 
-	// Calculate crop offsets to center the crop
+	// calculate crop offsets to center the crop
 	xOffset := (width - size) / 2
 	yOffset := (height - size) / 2
 
-	// Create cropped image
+	// create cropped image
 	cropped := image.NewRGBA(image.Rect(0, 0, size, size))
 	for y := 0; y < size; y++ {
 		for x := 0; x < size; x++ {
@@ -53,26 +51,25 @@ func cropToSquare(imagePath string) (string, error) {
 		}
 	}
 
-	// Create output path
+	// create output path
 	ext := filepath.Ext(imagePath)
 	base := strings.TrimSuffix(imagePath, ext)
 	croppedPath := base + "_square" + ext
 
-	// Save cropped image
 	outFile, err := os.Create(croppedPath)
 	if err != nil {
 		return "", fmt.Errorf("failed to create output file: %v", err)
 	}
 	defer outFile.Close()
 
-	// Encode based on format
+	// encode based on format, 100 is used because the image is already compressed and Gravatar might already have compressed it
 	switch format {
 	case "jpeg", "jpg":
-		err = jpeg.Encode(outFile, cropped, &jpeg.Options{Quality: 95})
+		err = jpeg.Encode(outFile, cropped, &jpeg.Options{Quality: 100})
 	case "png":
 		err = png.Encode(outFile, cropped)
 	default:
-		err = jpeg.Encode(outFile, cropped, &jpeg.Options{Quality: 95})
+		err = jpeg.Encode(outFile, cropped, &jpeg.Options{Quality: 100})
 	}
 
 	if err != nil {

@@ -82,7 +82,7 @@ func parseFlags() *Config {
 	}
 }
 
-// validateConfig() - perform validations and sets defaults and returns if usage should be shown
+// validateConfig() - perform validations and sets defaults, returns if usage should be shown
 /* cfg (*Config) - configuration to validate */
 func validateConfig(cfg *Config) (bool, error) {
 	// check if input and/or output path is missing
@@ -125,7 +125,7 @@ func validateConfig(cfg *Config) (bool, error) {
 	return false, nil
 }
 
-// runCompress() - call the compressor with the provided Config and returns any errors
+// runCompress() - call the compressor with the provided Config
 /* cfg (*Config) - configuration for compression */
 func runCompress(cfg *Config) error {
 	err := compressor.CompressImage(cfg.InputPath, cfg.OutputPath, cfg.MaxSize,
