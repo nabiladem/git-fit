@@ -1,6 +1,9 @@
 package gravatar
 
 import (
+	"image"
+	"image/color"
+	"image/jpeg"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -9,51 +12,64 @@ import (
 	"testing"
 )
 
+// TestUploadAvatar() - tests the UploadAvatar() function
+/* t (*testing.T) - test context */
 func TestUploadAvatar(t *testing.T) {
-	// Create a temporary image file
 	tmpFile, err := os.CreateTemp("", "test-image-*.jpg")
 	if err != nil {
-		t.Fatalf("Failed to create temp file: %v", err)
+		t.Fatalf("failed to create temp file: %v", err)
 	}
 	defer os.Remove(tmpFile.Name())
 
-	content := []byte("fake image content")
-	if _, err := tmpFile.Write(content); err != nil {
-		t.Fatalf("Failed to write to temp file: %v", err)
+	// write a real square JPEG image (100x100) to temp file for testing
+	img := image.NewRGBA(image.Rect(0, 0, 100, 100))
+	col := color.RGBA{R: 255, G: 0, B: 0, A: 255}
+	for y := 0; y < 100; y++ {
+		for x := 0; x < 100; x++ {
+			img.Set(x, y, col)
+		}
+	}
+
+	if err := jpeg.Encode(tmpFile, img, &jpeg.Options{Quality: 90}); err != nil {
+		t.Fatalf("failed to write JPEG to temp file: %v", err)
 	}
 	tmpFile.Close()
 
-	// Mock Gravatar REST API server
+	content, err := os.ReadFile(tmpFile.Name())
+	if err != nil {
+		t.Fatalf("failed to read back temp file: %v", err)
+	}
+
+	// mock Gravatar REST API server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
-			t.Errorf("Expected POST request, got %s", r.Method)
+			t.Errorf("expected POST request, got %s", r.Method)
 		}
 
-		// Check authorization header
+		// check authorization header
 		authHeader := r.Header.Get("Authorization")
 		if !strings.HasPrefix(authHeader, "Bearer ") {
-			t.Errorf("Missing or invalid Authorization header: %s", authHeader)
+			t.Errorf("missing or invalid Authorization header: %s", authHeader)
 		}
 
 		if authHeader != "Bearer test-access-token" {
-			t.Errorf("Wrong access token in header: %s", authHeader)
+			t.Errorf("wrong access token in header: %s", authHeader)
 		}
 
-		// Check content type
 		contentType := r.Header.Get("Content-Type")
 		if !strings.Contains(contentType, "multipart/form-data") {
-			t.Errorf("Wrong content type: %s", contentType)
+			t.Errorf("wrong content type: %s", contentType)
 		}
 
-		// Parse multipart form
+		// parse multipart form
 		err := r.ParseMultipartForm(10 << 20) // 10 MB
 		if err != nil {
-			t.Errorf("Failed to parse multipart form: %v", err)
+			t.Errorf("failed to parse multipart form: %v", err)
 		}
 
-		file, _, err := r.FormFile("file")
+		file, _, err := r.FormFile("image")
 		if err != nil {
-			t.Errorf("Failed to get file from form: %v", err)
+			t.Errorf("failed to get file from form: %v", err)
 			http.Error(w, "Bad Request", http.StatusBadRequest)
 			return
 		}
@@ -61,25 +77,24 @@ func TestUploadAvatar(t *testing.T) {
 
 		fileContent, _ := io.ReadAll(file)
 		if string(fileContent) != string(content) {
-			t.Errorf("File content mismatch")
+			t.Errorf("file content mismatch")
 		}
 
-		// Return success response
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"success": true}`))
 	}))
 	defer server.Close()
 
-	// Override API base URL for testing
+	// override API base URL for testing
 	originalURL := apiBaseURL
 	apiBaseURL = server.URL
 	defer func() { apiBaseURL = originalURL }()
 
+	// manually set access token for testing (skip OAuth flow)
 	client := NewClient("test-client-id", "test-client-secret", "http://localhost:8080/callback", false)
-	// Manually set access token for testing (skip OAuth flow)
 	client.AccessToken = "test-access-token"
 
 	if err := client.UploadAvatar(tmpFile.Name()); err != nil {
-		t.Errorf("UploadAvatar failed: %v", err)
+		t.Errorf("uploadAvatar failed: %v", err)
 	}
 }
