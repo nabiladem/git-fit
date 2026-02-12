@@ -224,10 +224,7 @@ export default function UploadForm({ file, onFileChange }) {
 
     // prepare form data to send to the backend
     const fd = new FormData()
-    // sanitize filename to prevent "The string did not match the expected pattern" error
-    // remove control characters, newlines, and other invalid characters
-    const sanitizedFilename = file.name.replace(/[\x00-\x1F\x7F]/g, '')
-    fd.append('avatar', file, sanitizedFilename || 'image')
+    fd.append('avatar', file, file.name)
     fd.append('maxsize', String(maxSize))
     fd.append('format', format)
     fd.append('quality', String(quality))
@@ -321,9 +318,10 @@ export default function UploadForm({ file, onFileChange }) {
         </label>
         <div
           className={`relative group border-2 border-dashed rounded-2xl transition-all duration-500 ease-out
-            ${isDragging
-              ? 'border-[var(--glass-border)] bg-[var(--glass-bg)] backdrop-blur-xl scale-[1.02] shadow-[var(--shadow-color)]'
-              : 'border-[var(--glass-border)] hover:border-[var(--glass-highlight)] bg-[var(--glass-bg)] backdrop-blur-md hover:bg-[var(--glass-highlight)] shadow-[inset_0_2px_4px_0_rgba(0,0,0,0.1)]'
+            ${
+              isDragging
+                ? 'border-[var(--glass-border)] bg-[var(--glass-bg)] backdrop-blur-xl scale-[1.02] shadow-[var(--shadow-color)]'
+                : 'border-[var(--glass-border)] hover:border-[var(--glass-highlight)] bg-[var(--glass-bg)] backdrop-blur-md hover:bg-[var(--glass-highlight)] shadow-[inset_0_2px_4px_0_rgba(0,0,0,0.1)]'
             }
             ${preview ? 'p-0 overflow-hidden border-[var(--glass-border)]' : 'p-10'}
           `}
