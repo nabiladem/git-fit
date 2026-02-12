@@ -224,7 +224,11 @@ export default function UploadForm({ file, onFileChange }) {
 
     // prepare form data to send to the backend
     const fd = new FormData()
-    fd.append('avatar', file, file.name)
+    // sanitize filename to prevent "The string did not match the expected pattern" error
+    // remove control characters, newlines, and other invalid characters
+    // eslint-disable-next-line no-control-regex
+    const sanitizedFilename = file.name.replace(/[\x00-\x1F\x7F]/g, '')
+    fd.append('avatar', file, sanitizedFilename || 'image')
     fd.append('maxsize', String(maxSize))
     fd.append('format', format)
     fd.append('quality', String(quality))
