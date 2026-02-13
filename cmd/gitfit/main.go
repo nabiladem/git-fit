@@ -1,14 +1,14 @@
 package main
 
 import (
-"flag"
-"fmt"
-"os"
-"path/filepath"
-"strings"
+	"flag"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 
-"github.com/nabiladem/git-fit/internal/compressor"
-"github.com/nabiladem/git-fit/internal/gravatar"
+	"github.com/nabiladem/git-fit/internal/compressor"
+	"github.com/nabiladem/git-fit/internal/gravatar"
 )
 
 // Config holds parsed command-line options
@@ -24,6 +24,7 @@ type Config struct {
 	Verbose        bool
 	UploadGravatar bool
 }
+
 // main() - entry point
 func main() {
 	cfg := parseFlags()
@@ -49,19 +50,19 @@ func main() {
 
 // parseFlags() - extract flags into a Config struct
 func parseFlags() *Config {
-    // define command-line flags
+	// define command-line flags
 	inputPath := flag.String("input", "", "Path to the input image file")
 	outputPath := flag.String("output", "", "Path to save the compressed image")
 	maxSize := flag.Int("maxsize", 1048576, "Maximum file size in bytes (default 1MB)")
 	outputFormat := flag.String("format", "", "Output image format (jpeg, png, or gif)")
 	quality := flag.Int("quality", 85, "JPEG compression quality (1-100; 85 by default)")
 	verbose := flag.Bool("v", false, "Verbose logging enabled")
-uploadGravatar := flag.Bool("upload-gravatar", false, "Upload compressed image to Gravatar")
+	uploadGravatar := flag.Bool("upload-gravatar", false, "Upload compressed image to Gravatar")
 
-    // custom usage message for flags
+	// custom usage message for flags
 	flag.Usage = func() {
 		fmt.Println("Usage: gitfit -input <input-image-file> -output <output-image-file> -maxsize <max size in bytes> " +
-                    "-format <jpeg|png|gif> -quality <0-100> -v [for verbose logging]")
+			"-format <jpeg|png|gif> -quality <0-100> -v [for verbose logging]")
 		fmt.Println("Example: gitfit -input input.jpeg -output output.jpeg -maxsize 1000000 -format jpeg -quality 85 -v")
 		fmt.Println("Flags:")
 		flag.PrintDefaults()
@@ -69,23 +70,24 @@ uploadGravatar := flag.Bool("upload-gravatar", false, "Upload compressed image t
 
 	flag.Parse()
 
-    // Config struct populated with flag values
-	return &Config {
-		InputPath:    *inputPath,
-		OutputPath:   *outputPath,
-		MaxSize:      *maxSize,
-		OutputFormat: *outputFormat,
-		Quality:      *quality,
-		Verbose:      *verbose,
+	// Config struct populated with flag values
+	return &Config{
+		InputPath:      *inputPath,
+		OutputPath:     *outputPath,
+		MaxSize:        *maxSize,
+		OutputFormat:   *outputFormat,
+		Quality:        *quality,
+		Verbose:        *verbose,
+		UploadGravatar: *uploadGravatar,
 	}
 }
 
 // validateConfig() - perform validations and sets defaults and returns if usage should be shown
 /* cfg (*Config) - configuration to validate */
 func validateConfig(cfg *Config) (bool, error) {
-    // check if input and/or output path is missing
-    if cfg.InputPath == "" || cfg.OutputPath == "" {
-        // assume user knows about both flags if one is given
+	// check if input and/or output path is missing
+	if cfg.InputPath == "" || cfg.OutputPath == "" {
+		// assume user knows about both flags if one is given
 		if cfg.InputPath == "" && cfg.OutputPath == "" {
 			return true, nil
 		}
@@ -97,7 +99,7 @@ func validateConfig(cfg *Config) (bool, error) {
 		return false, fmt.Errorf("input file %s does not exist", cfg.InputPath)
 	}
 
-    // set default output format based on input file extension if not provided
+	// set default output format based on input file extension if not provided
 	if cfg.OutputFormat == "" {
 		extension := strings.ToLower(filepath.Ext(cfg.InputPath))
 		switch extension {
@@ -110,7 +112,7 @@ func validateConfig(cfg *Config) (bool, error) {
 		}
 	}
 
-    // append appropriate file extension to output path if missing
+	// append appropriate file extension to output path if missing
 	if filepath.Ext(cfg.OutputPath) == "" {
 		cfg.OutputPath = cfg.OutputPath + "." + cfg.OutputFormat
 	}
@@ -141,7 +143,7 @@ func validateConfig(cfg *Config) (bool, error) {
 /* cfg (*Config) - configuration for compression */
 func runCompress(cfg *Config) error {
 	err := compressor.CompressImage(cfg.InputPath, cfg.OutputPath, cfg.MaxSize,
-cfg.OutputFormat, cfg.Quality, cfg.Verbose)
+		cfg.OutputFormat, cfg.Quality, cfg.Verbose)
 	if err != nil {
 		return err
 	}
