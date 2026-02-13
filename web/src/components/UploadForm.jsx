@@ -251,7 +251,9 @@ export default function UploadForm({ file, onFileChange }) {
       if (!contentType || !contentType.includes('application/json')) {
         const text = await res.text()
         console.error('Non-JSON response received:', text)
-        throw new Error('Server returned an unexpected response format. Please ensure the backend is running and accessible.')
+        throw new Error(
+          'Server returned an unexpected response format. Please ensure the backend is running and accessible.'
+        )
       }
 
       const data = await res.json()
@@ -332,9 +334,10 @@ export default function UploadForm({ file, onFileChange }) {
         </label>
         <div
           className={`relative group border-2 border-dashed rounded-2xl transition-all duration-500 ease-out
-            ${isDragging
-              ? 'border-[var(--glass-border)] bg-[var(--glass-bg)] backdrop-blur-xl scale-[1.02] shadow-[var(--shadow-color)]'
-              : 'border-[var(--glass-border)] hover:border-[var(--glass-highlight)] bg-[var(--glass-bg)] backdrop-blur-md hover:bg-[var(--glass-highlight)] shadow-[inset_0_2px_4px_0_rgba(0,0,0,0.1)]'
+            ${
+              isDragging
+                ? 'border-[var(--glass-border)] bg-[var(--glass-bg)] backdrop-blur-xl scale-[1.02] shadow-[var(--shadow-color)]'
+                : 'border-[var(--glass-border)] hover:border-[var(--glass-highlight)] bg-[var(--glass-bg)] backdrop-blur-md hover:bg-[var(--glass-highlight)] shadow-[inset_0_2px_4px_0_rgba(0,0,0,0.1)]'
             }
             ${preview ? 'p-0 overflow-hidden border-[var(--glass-border)]' : 'p-10'}
           `}
