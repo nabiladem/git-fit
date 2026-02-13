@@ -22,7 +22,11 @@ type Client struct {
 	Verbose      bool
 }
 
-// NewClient creates a new Gravatar client with OAuth credentials
+// NewClient() - creates a new Gravatar client with OAuth credentials
+/* clientID (string) - client ID for OAuth authentication
+   clientSecret (string) - client secret for OAuth authentication
+   redirectURI (string) - redirect URI for OAuth authentication
+   verbose (bool) - enable verbose logging */
 func NewClient(clientID, clientSecret, redirectURI string, verbose bool) *Client {
 	return &Client{
 		ClientID:     clientID,
@@ -32,7 +36,8 @@ func NewClient(clientID, clientSecret, redirectURI string, verbose bool) *Client
 	}
 }
 
-// Authenticate performs OAuth flow and obtains an access token
+// Authenticate() - performs OAuth flow and obtains an access token
+// c (*Client) - Gravatar client to authenticate
 func (c *Client) Authenticate() error {
 	oauth := NewOAuthConfig(c.ClientID, c.ClientSecret, c.RedirectURI)
 
@@ -45,25 +50,48 @@ func (c *Client) Authenticate() error {
 	return nil
 }
 
-// UploadAvatar uploads an image to Gravatar using the REST API
+// UploadAvatar() - uploads an image to Gravatar using the REST API
+/* c (*Client) - Gravatar client to upload avatar
+   imagePath (string) - path to the image to upload */
 func (c *Client) UploadAvatar(imagePath string) error {
 	if c.AccessToken == "" {
 		return fmt.Errorf("not authenticated - call Authenticate() first")
 	}
 
-	// Open the image file
-	file, err := os.Open(imagePath)
+	// Gravatar requires square images - crop if necessary
+	if c.Verbose {
+		fmt.Println("Checking if image needs to be cropped to square...")
+	}
+
+	squareImagePath, err := cropToSquare(imagePath)
+	if err != nil {
+		return fmt.Errorf("failed to crop image to square: %v", err)
+	}
+
+	if c.Verbose {
+		if squareImagePath != imagePath {
+			fmt.Printf("Cropped image to square: %s\n", squareImagePath)
+		} else {
+			fmt.Println("Image is already square, no cropping needed")
+		}
+	}
+
+	// clean up temporary square image if it's different from original
+	if squareImagePath != imagePath {
+		defer os.Remove(squareImagePath)
+	}
+
+	file, err := os.Open(squareImagePath)
 	if err != nil {
 		return fmt.Errorf("failed to open image file: %v", err)
 	}
 	defer file.Close()
 
-	// Create multipart form data
+	// create multipart form data
 	var requestBody bytes.Buffer
 	writer := multipart.NewWriter(&requestBody)
 
-	// Add the file to the form
-	part, err := writer.CreateFormFile("file", filepath.Base(imagePath))
+	part, err := writer.CreateFormFile("image", filepath.Base(squareImagePath))
 	if err != nil {
 		return fmt.Errorf("failed to create form file: %v", err)
 	}
@@ -78,18 +106,17 @@ func (c *Client) UploadAvatar(imagePath string) error {
 		return fmt.Errorf("failed to close multipart writer: %v", err)
 	}
 
-	// Create the HTTP request
-	url := apiBaseURL + "/me/avatars"
-	req, err := http.NewRequest("POST", url, &requestBody)
+	// create the HTTP request with select_avatar parameter
+	uploadURL := apiBaseURL + "/me/avatars?select_avatar=true"
+	req, err := http.NewRequest("POST", uploadURL, &requestBody)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %v", err)
 	}
 
-	// Set headers
+	// set headers
 	req.Header.Set("Authorization", "Bearer "+c.AccessToken)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
-	// Send the request
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -97,13 +124,12 @@ func (c *Client) UploadAvatar(imagePath string) error {
 	}
 	defer resp.Body.Close()
 
-	// Read response body
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("failed to read response: %v", err)
 	}
 
-	// Check response status
+	// check response status
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		var errorResp map[string]interface{}
 		json.Unmarshal(body, &errorResp)

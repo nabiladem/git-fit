@@ -27,7 +27,7 @@ type Config struct {
 
 // main() - entry point
 func main() {
-	cfg := parseFlags()
+	cfg := parseFlags(os.Args[1:])
 	showUsage, err := validateConfig(cfg)
 
 	if showUsage {
@@ -49,28 +49,29 @@ func main() {
 }
 
 // parseFlags() - extract flags into a Config struct
-func parseFlags() *Config {
+func parseFlags(args []string) *Config {
+	fs := flag.NewFlagSet("gitfit", flag.ExitOnError)
+
 	// define command-line flags
-	inputPath := flag.String("input", "", "Path to the input image file")
-	outputPath := flag.String("output", "", "Path to save the compressed image")
-	maxSize := flag.Int("maxsize", 1048576, "Maximum file size in bytes (default 1MB)")
-	outputFormat := flag.String("format", "", "Output image format (jpeg, png, or gif)")
-	quality := flag.Int("quality", 85, "JPEG compression quality (1-100; 85 by default)")
-	verbose := flag.Bool("v", false, "Verbose logging enabled")
-	uploadGravatar := flag.Bool("upload-gravatar", false, "Upload compressed image to Gravatar")
+	inputPath := fs.String("input", "", "Path to the input image file")
+	outputPath := fs.String("output", "", "Path to save the compressed image")
+	maxSize := fs.Int("maxsize", 1048576, "Maximum file size in bytes (default 1MB)")
+	outputFormat := fs.String("format", "", "Output image format (jpeg, png, or gif)")
+	quality := fs.Int("quality", 85, "JPEG compression quality (1-100; 85 by default)")
+	verbose := fs.Bool("v", false, "Verbose logging enabled")
+	uploadGravatar := fs.Bool("upload-gravatar", false, "Upload compressed image to Gravatar")
 
 	// custom usage message for flags
-	flag.Usage = func() {
+	fs.Usage = func() {
 		fmt.Println("Usage: gitfit -input <input-image-file> -output <output-image-file> -maxsize <max size in bytes> " +
-			"-format <jpeg|png|gif> -quality <0-100> -v [for verbose logging]")
-		fmt.Println("Example: gitfit -input input.jpeg -output output.jpeg -maxsize 1000000 -format jpeg -quality 85 -v")
+			"-format <jpeg|png|gif> -quality <0-100> -v [for verbose logging] -upload-gravatar [to upload to Gravatar]")
+		fmt.Println("Example: gitfit -input input.jpeg -output output.jpeg -maxsize 1000000 -format jpeg -quality 85 -v -upload-gravatar")
 		fmt.Println("Flags:")
-		flag.PrintDefaults()
+		fs.PrintDefaults()
 	}
 
-	flag.Parse()
+	fs.Parse(args)
 
-	// Config struct populated with flag values
 	return &Config{
 		InputPath:      *inputPath,
 		OutputPath:     *outputPath,
@@ -82,12 +83,11 @@ func parseFlags() *Config {
 	}
 }
 
-// validateConfig() - perform validations and sets defaults and returns if usage should be shown
+// validateConfig() - perform validations and sets defaults, returns if usage should be shown
 /* cfg (*Config) - configuration to validate */
 func validateConfig(cfg *Config) (bool, error) {
 	// check if input and/or output path is missing
 	if cfg.InputPath == "" || cfg.OutputPath == "" {
-		// assume user knows about both flags if one is given
 		if cfg.InputPath == "" && cfg.OutputPath == "" {
 			return true, nil
 		}
@@ -103,42 +103,28 @@ func validateConfig(cfg *Config) (bool, error) {
 	if cfg.OutputFormat == "" {
 		extension := strings.ToLower(filepath.Ext(cfg.InputPath))
 		switch extension {
+		case ".jpg", ".jpeg":
+			cfg.OutputFormat = "jpeg"
 		case ".png":
 			cfg.OutputFormat = "png"
 		case ".gif":
 			cfg.OutputFormat = "gif"
 		default:
-			cfg.OutputFormat = "jpeg"
+			return false, fmt.Errorf("unsupported input file extension: %s. Please specify format explicitly", extension)
 		}
 	}
 
-	// append appropriate file extension to output path if missing
-	if filepath.Ext(cfg.OutputPath) == "" {
-		cfg.OutputPath = cfg.OutputPath + "." + cfg.OutputFormat
+	if cfg.MaxSize <= 0 {
+		return false, fmt.Errorf("max size must be greater than 0")
 	}
 
 	if cfg.Quality <= 0 || cfg.Quality > 100 {
 		return false, fmt.Errorf("value for -quality must be between 1 and 100 inclusive")
 	}
 
-	if cfg.Verbose && cfg.Quality == 85 {
-		fmt.Println("Using default quality of 85 for JPEG compression.")
-	}
-
-	if cfg.Verbose {
-		fmt.Printf("Input file: %s\nOutput file: %s\nMaximum size: %d\nOutput format: %s\n",
-			cfg.InputPath, cfg.OutputPath, cfg.MaxSize, cfg.OutputFormat)
-
-		if cfg.OutputFormat == "jpeg" {
-			fmt.Println("Quality:", cfg.Quality)
-		}
-	}
-
 	return false, nil
 }
 
-// runCompress() - call the compressor with the provided Config
-/* cfg (*Config) - configuration for compression */
 // runCompress() - call the compressor with the provided Config
 /* cfg (*Config) - configuration for compression */
 func runCompress(cfg *Config) error {
@@ -153,7 +139,7 @@ func runCompress(cfg *Config) error {
 			fmt.Println("Uploading to Gravatar...")
 		}
 
-		// Load OAuth credentials from environment
+		// load OAuth credentials from environment
 		clientID := os.Getenv("GRAVATAR_CLIENT_ID")
 		clientSecret := os.Getenv("GRAVATAR_CLIENT_SECRET")
 		redirectURI := os.Getenv("GRAVATAR_REDIRECT_URI")
@@ -162,15 +148,15 @@ func runCompress(cfg *Config) error {
 			return fmt.Errorf("GRAVATAR_CLIENT_ID and GRAVATAR_CLIENT_SECRET environment variables must be set")
 		}
 
-		// Use default redirect URI if not specified
+		// use default redirect URI if not specified
 		if redirectURI == "" {
 			redirectURI = "http://localhost:8080/callback"
 		}
 
-		// Create OAuth client
+		// create OAuth client
 		client := gravatar.NewClient(clientID, clientSecret, redirectURI, cfg.Verbose)
 
-		// Perform OAuth authentication
+		// perform OAuth authentication
 		if cfg.Verbose {
 			fmt.Println("Starting OAuth authentication...")
 			fmt.Println("Your browser will open for authorization.")
@@ -180,7 +166,7 @@ func runCompress(cfg *Config) error {
 			return fmt.Errorf("OAuth authentication failed: %v", err)
 		}
 
-		// Upload avatar
+		// upload avatar
 		if err := client.UploadAvatar(cfg.OutputPath); err != nil {
 			return fmt.Errorf("failed to upload to Gravatar: %v", err)
 		}
