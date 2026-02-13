@@ -22,13 +22,16 @@ const (
 
 // OAuthConfig holds OAuth 2.0 configuration
 type OAuthConfig struct {
-	ClientID     string
-	ClientSecret string
-	RedirectURI  string
-	Scopes       []string
-	state        string
-	codeChan     chan string
-	errChan      chan error
+	ClientID        string
+	ClientSecret    string
+	RedirectURI     string
+	Scopes          []string
+	AuthEndpoint    string
+	TokenEndpoint   string
+	LocalServerPort string
+	state           string
+	codeChan        chan string
+	errChan         chan error
 }
 
 // TokenResponse represents the OAuth token response
@@ -39,38 +42,51 @@ type TokenResponse struct {
 	BlogURL     string `json:"blog_url"`
 }
 
-// NewOAuthConfig creates a new OAuth configuration
+// NewOAuthConfig() - creates a new OAuth configuration
+/* clientID (string) - client ID for OAuth authentication
+   clientSecret (string) - client secret for OAuth authentication
+   redirectURI (string) - redirect URI for OAuth authentication */
 func NewOAuthConfig(clientID, clientSecret, redirectURI string) *OAuthConfig {
 	return &OAuthConfig{
-		ClientID:     clientID,
-		ClientSecret: clientSecret,
-		RedirectURI:  redirectURI,
-		Scopes:       []string{"auth", "gravatar-profile:manage"},
-		codeChan:     make(chan string),
-		errChan:      make(chan error),
+		ClientID:        clientID,
+		ClientSecret:    clientSecret,
+		RedirectURI:     redirectURI,
+		Scopes:          []string{"auth", "gravatar-profile:manage"},
+		AuthEndpoint:    authorizationEndpoint,
+		TokenEndpoint:   tokenEndpoint,
+		LocalServerPort: ":8080",
+		codeChan:        make(chan string),
+		errChan:         make(chan error),
 	}
 }
 
-// StartOAuthFlow initiates the OAuth flow and returns an access token
+// OAuthTimeout is the duration to wait for the OAuth callback
+var OAuthTimeout = 5 * time.Minute
+
 func (c *OAuthConfig) StartOAuthFlow(verbose bool) (string, error) {
-	// Generate random state for CSRF protection
+	// generate random state for CSRF protection
 	c.state = generateRandomState()
 
-	// Start local server
-	server := &http.Server{Addr: ":8080"}
-	http.HandleFunc("/callback", c.callbackHandler)
+	// create a new mux to avoid conflicts with global DefaultServeMux
+	mux := http.NewServeMux()
+	mux.HandleFunc("/callback", c.callbackHandler)
 
-	// Start server in background
+	// start local server
+	server := &http.Server{
+		Addr:    c.LocalServerPort,
+		Handler: mux,
+	}
+
+	// start server in background
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			c.errChan <- fmt.Errorf("failed to start callback server: %v", err)
 		}
 	}()
 
-	// Give server time to start
 	time.Sleep(100 * time.Millisecond)
 
-	// Build authorization URL
+	// build authorization URL
 	authURL := c.buildAuthURL()
 
 	if verbose {
@@ -78,33 +94,32 @@ func (c *OAuthConfig) StartOAuthFlow(verbose bool) (string, error) {
 		fmt.Printf("If browser doesn't open, visit: %s\n", authURL)
 	}
 
-	// Open browser
 	if err := openBrowser(authURL); err != nil {
 		fmt.Printf("Failed to open browser automatically: %v\n", err)
 		fmt.Printf("Please visit this URL manually: %s\n", authURL)
 	}
 
-	// Wait for callback or timeout
+	// wait for callback or timeout
 	var code string
 	select {
 	case code = <-c.codeChan:
-		// Got authorization code
+		// got authorization code
 	case err := <-c.errChan:
 		server.Shutdown(context.Background())
 		return "", err
-	case <-time.After(5 * time.Minute):
+	case <-time.After(OAuthTimeout):
 		server.Shutdown(context.Background())
-		return "", fmt.Errorf("authorization timeout after 5 minutes")
+		return "", fmt.Errorf("authorization timeout after %v", OAuthTimeout)
 	}
 
-	// Shutdown server
+	// shutdown server
 	server.Shutdown(context.Background())
 
 	if verbose {
 		fmt.Println("Authorization successful! Exchanging code for token...")
 	}
 
-	// Exchange code for token
+	// exchange authorization code for access token
 	token, err := c.exchangeCodeForToken(code)
 	if err != nil {
 		return "", fmt.Errorf("failed to exchange code for token: %v", err)
@@ -113,7 +128,8 @@ func (c *OAuthConfig) StartOAuthFlow(verbose bool) (string, error) {
 	return token, nil
 }
 
-// buildAuthURL constructs the OAuth authorization URL
+// buildAuthURL() - constructs the OAuth authorization URL
+// c (*OAuthConfig) - OAuth configuration
 func (c *OAuthConfig) buildAuthURL() string {
 	params := url.Values{}
 	params.Set("client_id", c.ClientID)
@@ -122,14 +138,16 @@ func (c *OAuthConfig) buildAuthURL() string {
 	params.Set("scope", strings.Join(c.Scopes, " "))
 	params.Set("state", c.state)
 
-	return authorizationEndpoint + "?" + params.Encode()
+	return c.AuthEndpoint + "?" + params.Encode()
 }
 
-// callbackHandler handles the OAuth callback
+// callbackHandler() - handles the OAuth callback
+/* w (*http.ResponseWriter) - HTTP response writer;
+   r (*http.Request) - HTTP request */
 func (c *OAuthConfig) callbackHandler(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 
-	// Check for errors
+	// check for errors
 	if errMsg := query.Get("error"); errMsg != "" {
 		c.errChan <- fmt.Errorf("authorization denied: %s", errMsg)
 		w.WriteHeader(http.StatusBadRequest)
@@ -137,7 +155,7 @@ func (c *OAuthConfig) callbackHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Verify state
+	// verify state
 	state := query.Get("state")
 	if state != c.state {
 		c.errChan <- fmt.Errorf("invalid state parameter (CSRF protection)")
@@ -146,7 +164,7 @@ func (c *OAuthConfig) callbackHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get authorization code
+	// get authorization code
 	code := query.Get("code")
 	if code == "" {
 		c.errChan <- fmt.Errorf("no authorization code received")
@@ -155,15 +173,16 @@ func (c *OAuthConfig) callbackHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Send success response to user
+	// send success response to user
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, "<html><body><h1>Success!</h1><p>Authorization successful. You can close this window and return to the terminal.</p></body></html>")
 
-	// Send code to main flow
+	// send code to main flow
 	c.codeChan <- code
 }
 
-// exchangeCodeForToken exchanges the authorization code for an access token
+// exchangeCodeForToken() - exchanges the authorization code for an access token
+// code (string) - authorization code to exchange for access token
 func (c *OAuthConfig) exchangeCodeForToken(code string) (string, error) {
 	data := url.Values{}
 	data.Set("client_id", c.ClientID)
@@ -172,7 +191,7 @@ func (c *OAuthConfig) exchangeCodeForToken(code string) (string, error) {
 	data.Set("redirect_uri", c.RedirectURI)
 	data.Set("grant_type", "authorization_code")
 
-	req, err := http.NewRequest("POST", tokenEndpoint, strings.NewReader(data.Encode()))
+	req, err := http.NewRequest("POST", c.TokenEndpoint, strings.NewReader(data.Encode()))
 	if err != nil {
 		return "", err
 	}
@@ -202,11 +221,14 @@ func (c *OAuthConfig) exchangeCodeForToken(code string) (string, error) {
 	return tokenResp.AccessToken, nil
 }
 
-// openBrowser opens the default browser to the specified URL
-func openBrowser(url string) error {
+// openBrowserFunc() - opens the default browser to the specified URL
+// url (string) - URL to open in the browser
+// OpenBrowserFunc is a variable to allow mocking in tests
+var OpenBrowserFunc = func(url string) error {
 	var cmd string
 	var args []string
 
+	// open browser based on OS
 	switch runtime.GOOS {
 	case "darwin":
 		cmd = "open"
@@ -224,7 +246,13 @@ func openBrowser(url string) error {
 	return exec.Command(cmd, args...).Start()
 }
 
-// generateRandomState generates a random state string for CSRF protection
+// openBrowser() - opens the default browser to the specified URL
+// url (string) - URL to open in the browser
+func openBrowser(url string) error {
+	return OpenBrowserFunc(url)
+}
+
+// generateRandomState() - generates a random state string for CSRF protection
 func generateRandomState() string {
 	b := make([]byte, 16)
 	rand.Read(b)
