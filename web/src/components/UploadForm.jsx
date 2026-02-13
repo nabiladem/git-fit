@@ -233,9 +233,10 @@ export default function UploadForm({ file, onFileChange }) {
     fd.append('format', format)
     fd.append('quality', String(quality))
 
-    // API Base URL (for dev mode)
+    // API Base URL
     const apiBase =
-      import.meta.env && import.meta.env.DEV ? 'http://localhost:8080' : ''
+      import.meta.env.VITE_API_URL ||
+      (import.meta.env.DEV ? 'http://localhost:8080' : '')
 
     setLoading(true)
     try {
@@ -244,6 +245,17 @@ export default function UploadForm({ file, onFileChange }) {
         method: 'POST',
         body: fd,
       })
+
+      // Check if the response is JSON
+      const contentType = res.headers.get('content-type')
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await res.text()
+        console.error('Non-JSON response received:', text)
+        throw new Error(
+          'Server returned an unexpected response format. Please ensure the backend is running and accessible.'
+        )
+      }
+
       const data = await res.json()
 
       if (!res.ok) {
