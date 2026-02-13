@@ -224,14 +224,19 @@ export default function UploadForm({ file, onFileChange }) {
 
     // prepare form data to send to the backend
     const fd = new FormData()
-    fd.append('avatar', file, file.name)
+    // sanitize filename to prevent "The string did not match the expected pattern" error
+    // remove control characters, newlines, and other invalid characters
+    // eslint-disable-next-line no-control-regex
+    const sanitizedFilename = file.name.replace(/[\x00-\x1F\x7F]/g, '')
+    fd.append('avatar', file, sanitizedFilename || 'image')
     fd.append('maxsize', String(maxSize))
     fd.append('format', format)
     fd.append('quality', String(quality))
 
-    // API Base URL (for dev mode)
+    // API Base URL
     const apiBase =
-      import.meta.env && import.meta.env.DEV ? 'http://localhost:8080' : ''
+      import.meta.env.VITE_API_URL ||
+      (import.meta.env.DEV ? 'http://localhost:8080' : '')
 
     setLoading(true)
     try {
@@ -240,6 +245,15 @@ export default function UploadForm({ file, onFileChange }) {
         method: 'POST',
         body: fd,
       })
+
+      // Check if the response is JSON
+      const contentType = res.headers.get('content-type')
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await res.text()
+        console.error('Non-JSON response received:', text)
+        throw new Error('Server returned an unexpected response format. Please ensure the backend is running and accessible.')
+      }
+
       const data = await res.json()
 
       if (!res.ok) {
@@ -318,10 +332,9 @@ export default function UploadForm({ file, onFileChange }) {
         </label>
         <div
           className={`relative group border-2 border-dashed rounded-2xl transition-all duration-500 ease-out
-            ${
-              isDragging
-                ? 'border-[var(--glass-border)] bg-[var(--glass-bg)] backdrop-blur-xl scale-[1.02] shadow-[var(--shadow-color)]'
-                : 'border-[var(--glass-border)] hover:border-[var(--glass-highlight)] bg-[var(--glass-bg)] backdrop-blur-md hover:bg-[var(--glass-highlight)] shadow-[inset_0_2px_4px_0_rgba(0,0,0,0.1)]'
+            ${isDragging
+              ? 'border-[var(--glass-border)] bg-[var(--glass-bg)] backdrop-blur-xl scale-[1.02] shadow-[var(--shadow-color)]'
+              : 'border-[var(--glass-border)] hover:border-[var(--glass-highlight)] bg-[var(--glass-bg)] backdrop-blur-md hover:bg-[var(--glass-highlight)] shadow-[inset_0_2px_4px_0_rgba(0,0,0,0.1)]'
             }
             ${preview ? 'p-0 overflow-hidden border-[var(--glass-border)]' : 'p-10'}
           `}
