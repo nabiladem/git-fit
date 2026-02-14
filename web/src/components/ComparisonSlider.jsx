@@ -74,7 +74,7 @@ export default function ComparisonSlider({
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-[400px] rounded-2xl overflow-hidden cursor-ew-resize select-none shadow-[var(--shadow-color)] border border-[var(--glass-border)] bg-[var(--glass-bg)] backdrop-blur-2xl backdrop-saturate-200 ring-1 ring-[var(--glass-border)]"
+      className="relative w-full h-[300px] sm:h-[400px] rounded-2xl overflow-hidden cursor-ew-resize select-none shadow-[var(--shadow-color)] border border-[var(--glass-border)] bg-[var(--glass-bg)] backdrop-blur-2xl backdrop-saturate-200 ring-1 ring-[var(--glass-border)]"
       onMouseDown={(e) => {
         setIsDragging(true)
         handleMove(e)
@@ -90,7 +90,7 @@ export default function ComparisonSlider({
         alt="After"
         className="absolute inset-0 w-full h-full object-cover"
       />
-      <div className="absolute top-4 right-4 bg-black/40 backdrop-blur-xl border border-[var(--glass-border)] text-white px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap shadow-lg ring-1 ring-[var(--glass-border)]">
+      <div className="absolute top-2 sm:top-4 right-2 sm:right-4 bg-black/40 backdrop-blur-xl border border-[var(--glass-border)] text-white px-2 sm:px-4 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap shadow-lg ring-1 ring-[var(--glass-border)]">
         {labelAfter}
       </div>
 
@@ -105,7 +105,7 @@ export default function ComparisonSlider({
           className="absolute inset-0 w-full h-full object-cover max-w-none"
           style={{ width: containerWidth || '100%' }}
         />
-        <div className="absolute top-4 left-4 bg-black/40 backdrop-blur-xl border border-[var(--glass-border)] text-white px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap shadow-lg ring-1 ring-[var(--glass-border)]">
+        <div className="absolute top-2 sm:top-4 left-2 sm:left-4 bg-black/40 backdrop-blur-xl border border-[var(--glass-border)] text-white px-2 sm:px-4 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap shadow-lg ring-1 ring-[var(--glass-border)]">
           {labelBefore}
         </div>
       </div>
