@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "debug-node": "node debug-node.js"
   },
   "dependencies": {
     "glob": "^13.0.3",

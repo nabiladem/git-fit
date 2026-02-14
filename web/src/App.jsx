@@ -30,8 +30,8 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen flex items-start justify-center p-6 pt-20 transition-colors duration-500">
-      <div className="relative w-full max-w-3xl bg-[var(--glass-bg)] backdrop-blur-2xl backdrop-saturate-200 rounded-3xl shadow-2xl border border-[var(--glass-border)] border-t-[var(--glass-highlight)] border-l-[var(--glass-highlight)] p-10 shadow-[var(--shadow-color)] ring-1 ring-[var(--glass-border)] transition-all duration-500">
+    <div className="min-h-screen flex flex-col items-center justify-start p-4 sm:p-6 pt-10 sm:pt-20 transition-colors duration-500">
+      <div className="relative w-full max-w-3xl bg-[var(--glass-bg)] backdrop-blur-2xl backdrop-saturate-200 rounded-3xl shadow-2xl border border-[var(--glass-border)] border-t-[var(--glass-highlight)] border-l-[var(--glass-highlight)] p-6 sm:p-10 shadow-[var(--shadow-color)] ring-1 ring-[var(--glass-border)] transition-all duration-500">
         <header className="mb-8 text-center relative">
           {/* Theme Toggle */}
           <button
@@ -70,11 +70,11 @@ export default function App() {
             )}
           </button>
 
-          <h1 className="text-4xl font-bold text-[var(--text-primary)] drop-shadow-md mb-2 transition-colors duration-300">
+          <h1 className="text-3xl sm:text-4xl font-bold text-[var(--text-primary)] drop-shadow-md mb-2 transition-colors duration-300">
             git fit
           </h1>
 
-          <p className="text-[var(--text-secondary)] text-lg font-medium transition-colors duration-300">
+          <p className="text-[var(--text-secondary)] text-base sm:text-lg font-medium transition-colors duration-300">
             Compress images to GitHub avatar limits (1MB).
           </p>
         </header>
@@ -90,6 +90,20 @@ export default function App() {
           )}
         </main>
       </div>
+
+      <footer className="mt-8 mb-4 text-center animate-fade-in">
+        <p className="text-[var(--text-secondary)] text-sm font-medium">
+          Developed by{' '}
+          <a
+            href="https://github.com/nabiladem"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[var(--text-primary)] hover:underline decoration-white/30 underline-offset-4 transition-all"
+          >
+            nabiladem
+          </a>
+        </p>
+      </footer>
     </div>
   )
 }

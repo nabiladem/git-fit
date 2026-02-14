@@ -339,7 +339,7 @@ export default function UploadForm({ file, onFileChange }) {
                 ? 'border-[var(--glass-border)] bg-[var(--glass-bg)] backdrop-blur-xl scale-[1.02] shadow-[var(--shadow-color)]'
                 : 'border-[var(--glass-border)] hover:border-[var(--glass-highlight)] bg-[var(--glass-bg)] backdrop-blur-md hover:bg-[var(--glass-highlight)] shadow-[inset_0_2px_4px_0_rgba(0,0,0,0.1)]'
             }
-            ${preview ? 'p-0 overflow-hidden border-[var(--glass-border)]' : 'p-10'}
+            ${preview ? 'p-0 overflow-hidden border-[var(--glass-border)]' : 'p-6 sm:p-10'}
           `}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
@@ -354,7 +354,7 @@ export default function UploadForm({ file, onFileChange }) {
           />
 
           {preview ? (
-            <div className="relative w-full h-64 bg-black/20 group-hover:bg-black/30 transition-all duration-300">
+            <div className="relative w-full h-48 sm:h-64 bg-black/20 group-hover:bg-black/30 transition-all duration-300">
               <img
                 src={preview}
                 alt="preview"
@@ -428,7 +428,7 @@ export default function UploadForm({ file, onFileChange }) {
       </div>
 
       {/* Form Controls */}
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
         <label className="block text-sm font-semibold text-white drop-shadow-sm ml-1">
           Max Size
           <div className="flex gap-2 mt-2">
@@ -695,7 +695,7 @@ export default function UploadForm({ file, onFileChange }) {
           {/* Compression Stats Banner */}
           {file && (
             <div className="mb-5 p-4 rounded-xl bg-gradient-to-r from-green-500/5 via-emerald-500/5 to-blue-500/5 border border-[var(--glass-border)] backdrop-blur-2xl bg-[var(--stats-bg)]">
-              <div className="grid grid-cols-3 gap-4 text-center">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
                 <div>
                   <div
                     className="text-2xl font-bold text-green-400"
@@ -753,7 +753,7 @@ export default function UploadForm({ file, onFileChange }) {
           )}
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-2 gap-4 mb-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
             <div className="flex flex-col p-3 rounded-lg bg-[var(--input-bg)] border border-[var(--glass-border)]">
               <span className="text-xs text-[var(--text-secondary)] uppercase tracking-wide font-medium mb-1">
                 Filename
