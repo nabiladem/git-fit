@@ -90,6 +90,20 @@ export default function App() {
           )}
         </main>
       </div>
+
+      <footer className="mt-8 mb-4 text-center animate-fade-in">
+        <p className="text-[var(--text-secondary)] text-sm font-medium">
+          Developed by{' '}
+          <a
+            href="https://github.com/nabiladem"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[var(--text-primary)] hover:underline decoration-white/30 underline-offset-4 transition-all"
+          >
+            nabiladem
+          </a>
+        </p>
+      </footer>
     </div>
   )
 }
