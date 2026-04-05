@@ -4,7 +4,7 @@
 
 As a GitHub user, you may have tried to update your avatar and realized there is a strict 1MB file size limit. Git Fit provides a convenient way to compress your images while maintaining high-quality output, and is available as both a command-line tool (CLI) and a web application.
 
-![Preview](preview.png)
+![Preview](web/public/preview.png)
 
 ## Stack
 
