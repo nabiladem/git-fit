@@ -19,6 +19,7 @@ debug-node.js
 compress
 gitfit-compressed-*.jpg
 !favicon.png
+!web/public/preview.png
 
 # Logs and databases
 *.log
